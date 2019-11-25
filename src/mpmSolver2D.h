@@ -46,19 +46,19 @@ public:
 private:
 
     // settings
-    int m_gridHeight{512}; //!< number of grid cells in Y direction
+    int m_gridHeight{256}; //!< number of grid cells in Y direction
     int m_paticleBufferResizeValue{4096}; //!< number of slots added to particle buffer upon reallocation
 
-    float m_timestep{0.01}; //!< length of a timestep
+    float m_timestep{0.1}; //!< length of a timestep
     int m_timestepsPerFrame{1}; //!< number of timesteps to be performed per frame
     int m_g2pGroupSize{256}; //!< size of workgroup for g2p
     glm::ivec2 m_gridUpdateGroupSize{16,16}; //!< size of workgroup for gridUpdate
 
-    float m_particleSpawnSeperation{0.2};
+    float m_particleSpawnSeperation{0.5};
     float m_particleMass{0.1}; //!< mass of one particle
     float m_bulkModulus{5}; //!< bulk modulus of the material
     float m_exponentialGamma{1}; //!< exponential gamme of the material
-    glm::vec2 m_gravity{0,-5}; //!< gravity
+    glm::vec2 m_gravity{0,-200}; //!< gravity
 
     float m_particleRenderSize{1.0}; //!< render size of particles
     float m_particleBrightness{1.0}; //!< brightness of particles
@@ -83,7 +83,9 @@ private:
     mpu::gph::Buffer<float> m_initialVolume; //! inital volume of particles
 
     // grid data
-    mpu::gph::Texture m_gridVelocityMass; //!< velocities and mass on the grid (mass is blue component)
+    mpu::gph::Texture m_gridVelX; //!< x-velocities on the grid
+    mpu::gph::Texture m_gridVelY; //!< y-velocities on the grid
+    mpu::gph::Texture m_gridMass; //!<  mass on the grid
     mpu::gph::Texture m_gridCollision; //!< collision level set on the grid
 
     // vao for rendering
@@ -97,6 +99,7 @@ private:
     mpu::gph::ScreenFillingTri m_collisionMapRenderer; //!< renders collision map
 
     mpu::gph::ShaderProgram m_p2gShader; //!< shader used during particle to grid transfer
+    mpu::gph::ShaderProgram m_p2gShaderAtomic; //!< shader used during particle to grid transfer
     mpu::gph::ShaderProgram m_gridUpdateShader; //!< shader used for grid update
     mpu::gph::ShaderProgram m_g2pShader; //!< shader used during grid to particle transfer
 

@@ -21,7 +21,9 @@
 mpmSolver2D::mpmSolver2D(int width, int height)
     : m_domainSize((float(width) / float(height)) * m_gridHeight, m_gridHeight),
       m_simDomainScale(float(height)/(m_gridHeight)),
-      m_gridVelocityMass(mpu::gph::TextureTypes::texture2D, GL_RGBA32F, 1, m_domainSize.x, m_domainSize.y),
+      m_gridVelX(mpu::gph::TextureTypes::texture2D, GL_R32F, 1, m_domainSize.x, m_domainSize.y),
+      m_gridVelY(mpu::gph::TextureTypes::texture2D, GL_R32F, 1, m_domainSize.x, m_domainSize.y),
+      m_gridMass(mpu::gph::TextureTypes::texture2D, GL_R32F, 1, m_domainSize.x, m_domainSize.y),
       m_gridCollision(mpu::gph::TextureTypes::texture2D, GL_R16F, 1, m_domainSize.x, m_domainSize.y),
       m_particleBufferCapacity(m_paticleBufferResizeValue),
       m_particlePositon(m_particleBufferCapacity),
@@ -35,7 +37,8 @@ mpmSolver2D::mpmSolver2D(int width, int height)
       m_particleRenderShader({{PROJECT_SHADER_PATH"particleRenderer.vert"},{PROJECT_SHADER_PATH"particleRenderer.frag"}}),
       m_gridUpdateShader({{PROJECT_SHADER_PATH"gridUpdate.comp"}}),
       m_g2pShader({{PROJECT_SHADER_PATH"g2p.comp"}}),
-      m_p2gShader({{PROJECT_SHADER_PATH"particleToGrid.vert"},{PROJECT_SHADER_PATH"particleToGrid.frag"}})
+      m_p2gShader({{PROJECT_SHADER_PATH"particleToGrid.vert"},{PROJECT_SHADER_PATH"particleToGrid.frag"}}),
+      m_p2gShaderAtomic({{PROJECT_SHADER_PATH"p2g.comp"}})
 {
     // bind all the buffers
     m_particlePositon.bindBase(2,GL_SHADER_STORAGE_BUFFER);
@@ -45,7 +48,9 @@ mpmSolver2D::mpmSolver2D(int width, int height)
     m_initialVolume.bindBase(6,GL_SHADER_STORAGE_BUFFER);
 
     // bind all the images
-    m_gridVelocityMass.bindImage(0,GL_READ_WRITE, GL_RGBA32F);
+    m_gridVelX.bindImage(3,GL_READ_WRITE, GL_R32F);
+    m_gridVelY.bindImage(4,GL_READ_WRITE, GL_R32F);
+    m_gridMass.bindImage(5,GL_READ_WRITE, GL_R32F);
     m_gridCollision.bindImage(1,GL_READ_WRITE, GL_R16F);
 
     // bind collision map as texture
@@ -71,24 +76,33 @@ mpmSolver2D::mpmSolver2D(int width, int height)
     m_particleRenderShader.uniform1b("falloff",m_falloff);
     m_particleRenderShader.uniform2f("domainSize", m_domainSize);
     m_addParticlesShader.uniform1f("spawnSeperation", m_particleSpawnSeperation);
+
     m_g2pShader.uniform1i("grid",0);
     m_g2pShader.uniform1i("numParticles",m_numParticles);
     m_g2pShader.uniform2f("simDomain",m_domainSize);
     m_g2pShader.uniform1f("timestep",m_timestep);
-    m_g2pShader.uniform1f("particleMass",m_particleMass);
+    m_g2pShader.uniform1f("pMass",m_particleMass);
     m_g2pShader.uniform1f("gridCellSize",1);
     m_g2pShader.uniform1f("apicFactor",4);
-    m_gridUpdateShader.uniform1i("grid",0);
+    m_gridUpdateShader.uniform1i("gridVX",3);
+    m_gridUpdateShader.uniform1i("gridVY",4);
+    m_gridUpdateShader.uniform1i("gridM",5);
     m_gridUpdateShader.uniform1i("collision",1);
     m_gridUpdateShader.uniform2f("simDomain",m_domainSize);
     m_gridUpdateShader.uniform1f("timestep",m_timestep);
-    m_p2gShader.uniform2f("simDomain",m_domainSize);
-    m_p2gShader.uniform1f("gridCellSize",1);
-    m_p2gShader.uniform1f("apicFactor",4);
-    m_p2gShader.uniform1f("pMass",m_particleMass);
-    m_p2gShader.uniform1f("timestep",m_timestep);
-    m_p2gShader.uniform1f("bulkModulus",m_bulkModulus);
-    m_p2gShader.uniform1f("exponentialGamma",m_exponentialGamma);
+    m_p2gShaderAtomic.uniform1i("numParticles",m_numParticles);
+    m_p2gShaderAtomic.uniform1f("pMass",m_particleMass);
+    m_p2gShaderAtomic.uniform1f("gridCellSize",1);
+    m_p2gShaderAtomic.uniform1i("gridVX",3);
+    m_p2gShaderAtomic.uniform1i("gridVY",4);
+    m_p2gShaderAtomic.uniform1i("gridM",5);
+//    m_p2gShader.uniform2f("simDomain",m_domainSize);
+//    m_p2gShader.uniform1f("gridCellSize",1);
+//    m_p2gShader.uniform1f("apicFactor",4);
+//    m_p2gShader.uniform1f("pMass",m_particleMass);
+//    m_p2gShader.uniform1f("timestep",m_timestep);
+//    m_p2gShader.uniform1f("bulkModulus",m_bulkModulus);
+//    m_p2gShader.uniform1f("exponentialGamma",m_exponentialGamma);
 
     // set up shader for collision map renderer
     m_collisionMapRenderer.setScreenFillShader(PROJECT_SHADER_PATH"collisionMap.frag");
@@ -105,7 +119,9 @@ void mpmSolver2D::setWindowSize(int width, int height)
     m_domainSize = glm::vec2((float(width) / float(height)) * m_gridHeight, m_gridHeight);
     m_simDomainScale = float(height)/(m_gridHeight);
 
-    m_gridVelocityMass = mpu::gph::Texture(mpu::gph::TextureTypes::texture2D, GL_RGBA32F, 1, m_domainSize.x, m_domainSize.y);
+    m_gridVelX = mpu::gph::Texture(mpu::gph::TextureTypes::texture2D, GL_R32F, 1, m_domainSize.x, m_domainSize.y);
+    m_gridVelY = mpu::gph::Texture(mpu::gph::TextureTypes::texture2D, GL_R32F, 1, m_domainSize.x, m_domainSize.y);
+    m_gridMass = mpu::gph::Texture(mpu::gph::TextureTypes::texture2D, GL_R32F, 1, m_domainSize.x, m_domainSize.y);
     mpu::gph::Texture newCollisionMap(mpu::gph::TextureTypes::texture2D, GL_R16F, 1, m_domainSize.x, m_domainSize.y);
 
     // copy old collision map
@@ -115,7 +131,9 @@ void mpmSolver2D::setWindowSize(int width, int height)
     m_gridCollision = std::move(newCollisionMap);
 
     // rebind all the images
-    m_gridVelocityMass.bindImage(0,GL_READ_WRITE, GL_RGBA32F);
+    m_gridVelX.bindImage(3,GL_READ_WRITE, GL_R32F);
+    m_gridVelY.bindImage(4,GL_READ_WRITE, GL_R32F);
+    m_gridMass.bindImage(5,GL_READ_WRITE, GL_R32F);
     m_gridCollision.bindImage(1,GL_READ_WRITE, GL_R16F);
 
     // rebind collision map as texture
@@ -126,7 +144,7 @@ void mpmSolver2D::setWindowSize(int width, int height)
     m_particleRenderShader.uniform2f("domainSize", m_domainSize);
     m_g2pShader.uniform2f("simDomain",m_domainSize);
     m_gridUpdateShader.uniform2f("simDomain",m_domainSize);
-    m_p2gShader.uniform2f("simDomain",m_domainSize);
+//    m_p2gShader.uniform2f("simDomain",m_domainSize);
 
 
 }
@@ -219,47 +237,49 @@ void mpmSolver2D::advanceSimulation()
         m_gridUpdateShader.uniform2f("externalAcc", m_additionalAcc + m_gravity);
         m_additionalAcc = glm::vec2(0);
 
-        glm::vec4 clear(0,0,0,0);
-        m_gridVelocityMass.clear(glm::value_ptr(clear),GL_RGBA,GL_FLOAT,0);
+        float clear = 0.0f;
+        m_gridVelX.clear(&clear,GL_RED,GL_FLOAT,0);
+        m_gridVelY.clear(&clear,GL_RED,GL_FLOAT,0);
+        m_gridMass.clear(&clear,GL_RED,GL_FLOAT,0);
 
         glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
         // use rasterization pipeline for particle to grid
-        m_fbo.attach( GL_COLOR_ATTACHMENT0, m_gridVelocityMass);
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_ONE, GL_ONE);
-        m_fbo.use();
-        glViewport(0,0,m_domainSize.x,m_domainSize.y);
-        m_vao.bind();
-        m_p2gShader.use();
-        glDrawArrays(GL_POINTS,0,m_numParticles);
-        m_fbo.disable();
-        glDisable(GL_BLEND);
-
+//        m_fbo.attach( GL_COLOR_ATTACHMENT0, m_gridVelocityMass);
+//        glEnable(GL_BLEND);
+//        glBlendFunc(GL_ONE, GL_ONE);
+//        m_fbo.use();
+//        glViewport(0,0,m_domainSize.x,m_domainSize.y);
+//        m_vao.bind();
+//        m_p2gShader.use();
+//        glDrawArrays(GL_POINTS,0,m_numParticles);
+//        m_fbo.disable();
+//        glDisable(GL_BLEND);
+        m_p2gShaderAtomic.dispatch(m_numParticles,m_g2pGroupSize);
         glMemoryBarrier(GL_ALL_BARRIER_BITS);
-        m_gridUpdateShader.dispatch(m_domainSize,m_gridUpdateGroupSize);
-        glMemoryBarrier(GL_ALL_BARRIER_BITS);
-        m_g2pShader.dispatch(m_numParticles,m_g2pGroupSize);
-        glMemoryBarrier(GL_ALL_BARRIER_BITS);
+//        m_gridUpdateShader.dispatch(m_domainSize,m_gridUpdateGroupSize);
+//        glMemoryBarrier(GL_ALL_BARRIER_BITS);
+//        m_g2pShader.dispatch(m_numParticles,m_g2pGroupSize);
+//        glMemoryBarrier(GL_ALL_BARRIER_BITS);
     }
 }
 
 void mpmSolver2D::drawCollisionMap()
 {
     m_collisionMapRenderer.draw();
-//    static mpu::gph::ScreenFillingTri tri;
-//    tri.setScreenFillShader(MPU_LIB_SHADER_PATH"drawTexture.frag");
-//    tri.shader().uniform1i("colorMap",4);
-//    m_gridVelocityMass.bind(4);
-//
-//    tri.draw();
+    static mpu::gph::ScreenFillingTri tri;
+    tri.setScreenFillShader(MPU_LIB_SHADER_PATH"drawTexture.frag");
+    tri.shader().uniform1i("colorMap",4);
+    m_gridMass.bind(4);
+
+    tri.draw();
 }
 
 void mpmSolver2D::drawParticles()
 {
-    m_vao.bind();
-    m_particleRenderShader.use();
-    glDrawArrays(GL_POINTS,0,m_numParticles);
+//    m_vao.bind();
+//    m_particleRenderShader.use();
+//    glDrawArrays(GL_POINTS,0,m_numParticles);
 }
 
 void mpmSolver2D::clearCollisionMap()

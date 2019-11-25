@@ -9,7 +9,9 @@ uniform float timestep;
 
 // --------------------------------------
 // texture bindings
-uniform layout(rgba32f) restrict image2D grid;
+uniform layout(r32f) restrict image2D gridVX;
+uniform layout(r32f) restrict image2D gridVY;
+uniform layout(r32f) restrict image2D gridM;
 uniform layout(r16f) restrict readonly image2D collision;
 
 // --------------------------------------
@@ -18,18 +20,21 @@ layout(local_size_variable) in;
 
 void main()
 {
-    ivec2 gridSize = imageSize(grid);
+    ivec2 gridSize = imageSize(gridM);
     ivec2 node;
     for(  node.y= int(gl_GlobalInvocationID.y); node.y < gridSize.y; node.y += int(gl_NumWorkGroups.y * gl_LocalGroupSizeARB.y))
         for(  node.x= int(gl_GlobalInvocationID.x); node.x < gridSize.x; node.x += int(gl_NumWorkGroups.x * gl_LocalGroupSizeARB.x))
         {
             // load momentum and mass
-            const vec3 mom_m = imageLoad(grid,node).xyz;
+            float mass = imageLoad(gridM,node).x;
 
-            if(mom_m.z > 0)
+            if(mass > 0)
             {
                 // calc celocity and add external acc
-                vec2 vel = mom_m.xy / mom_m.z;
+                vec2 vel;
+                vel.x = imageLoad(gridVX,node).x;
+                vel.y = imageLoad(gridVY,node).x;
+                vel /= mass;
                 vel += timestep * externalAcc;
 
                 // slip boundaries
@@ -38,7 +43,8 @@ void main()
 
                 // TODO: handle collision and proper boundaries
 
-                imageStore(grid, node, vec4(vel, mom_m.z, 0));
+                imageStore(gridVX, node, vec4(vel.x,0,0,0));
+                imageStore(gridVY, node, vec4(vel.y,0,0,0));
             }
         }
 }

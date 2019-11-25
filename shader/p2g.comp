@@ -1,16 +1,12 @@
 #version 450 core
 #extension GL_ARB_compute_variable_group_size : require
-
-#include "kernel.glsl"
+#extension GL_NV_shader_atomic_float : require
 
 // --------------------------------------
 // uniforms
 uniform int numParticles;
-uniform vec2 simDomain;
-uniform float timestep;
 uniform float pMass;
 uniform float gridCellSize=1;
-uniform float apicFactor=4.0f;
 
 // --------------------------------------
 // texture bindings
@@ -36,8 +32,8 @@ void main()
     for(  int id = int(gl_GlobalInvocationID.x); id < problemSize; id += int(gl_NumWorkGroups.x * gl_LocalGroupSizeARB.x))
     {
         vec2 pPos = particlePosition[id];
-        vec2 pVel = vec2(0);
-        mat2 pAffine = mat2(0);
+        vec2 pVel = particleVelocity[id];
+        mat2 pAffine = particleAffine[id];
 
         ivec2 cellId = ivec2(pPos);
         vec2 cellDiff = (pPos - cellId) -0.5;
@@ -55,30 +51,12 @@ void main()
                 ivec2  cellIndex = ivec2(cellId.x + gx-1, cellId.y +gy-1);
                 vec2 xdiff = (pPos - cellIndex) + 0.5;
 
-                vec2 gridVel;
-                gridVel.x = imageLoad(gridVX,cellIndex).x;
-                gridVel.y = imageLoad(gridVY,cellIndex).x;
+                vec2 momentum = wip * pMass * (pVel + pAffine * xdiff);
+                float mass = wip * pMass;
 
-                pVel += wip * gridVel;
-                pAffine += wip * mat2( gridVel.x * xdiff.x, gridVel.x * xdiff.y,
-                                        gridVel.y * xdiff.x, gridVel.y * xdiff.y);
+                imageAtomicAdd(gridVX,cellIndex, momentum.x);
+                imageAtomicAdd(gridVY,cellIndex, momentum.y);
+                imageAtomicAdd(gridM,cellIndex, mass);
             }
-
-        pAffine *= apicFactor;
-
-        // update position
-        pPos += timestep * pVel;
-
-        // update F
-//        mat2 pF = (mat2(1.0f) + timestep * apicFactor * affine) * particleF[id];
-
-        // clamp to simulation domain for safety
-        pPos = clamp(pPos, vec2(2,2), simDomain-vec2(3,3));
-
-        // store updated values
-        particlePosition[id] = pPos;
-        particleVelocity[id] = pVel;
-        particleAffine[id] = pAffine;
-//        particleF[id] = pF;
     }
 }

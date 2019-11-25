@@ -3,7 +3,7 @@
 float N(float x)
 {
     x = abs(x);
-    return (x<0.5f) ? (0.75f - x*x) : ( (x<1.5f) ? (0.5f * (1.5f - x*x) ) : 0 );
+    return (x<0.5f) ? (0.75f - x*x) : ( (x<1.5f) ? (0.5f * (1.5f-x) * (1.5-x) ) : 0 );
 }
 
 // quadratic bspline kernel
