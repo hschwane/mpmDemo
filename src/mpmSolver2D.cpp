@@ -34,7 +34,8 @@ mpmSolver2D::mpmSolver2D(int width, int height)
       m_copyCollisionMapShader({{PROJECT_SHADER_PATH"copyCollisionMap.comp"}}),
       m_particleRenderShader({{PROJECT_SHADER_PATH"particleRenderer.vert"},{PROJECT_SHADER_PATH"particleRenderer.frag"}}),
       m_gridUpdateShader({{PROJECT_SHADER_PATH"gridUpdate.comp"}}),
-      m_g2pShader({{PROJECT_SHADER_PATH"g2p.comp"}})
+      m_g2pShader({{PROJECT_SHADER_PATH"g2p.comp"}}),
+      m_p2gShader({{PROJECT_SHADER_PATH"particleToGrid.vert"},{PROJECT_SHADER_PATH"particleToGrid.frag"}})
 {
     // bind all the buffers
     m_particlePositon.bindBase(2,GL_SHADER_STORAGE_BUFFER);
@@ -207,6 +208,14 @@ void mpmSolver2D::advanceSimulation()
 
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
+    // use rasterization pipeline for particle to grid
+    m_fbo.attach( GL_COLOR_ATTACHMENT0, m_gridVelocityMass);
+    m_fbo.use();
+    glViewport(0,0,m_domainSize.x,m_domainSize.y);
+    m_vao.bind();
+    m_p2gShader.use();
+    glDrawArrays(GL_POINTS,0,m_numParticles);
+    m_fbo.disable();
 
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
     m_gridUpdateShader.dispatch(m_domainSize,m_gridUpdateGroupSize);

@@ -43,7 +43,6 @@ int main()
     // add resize callback
     window.addFBSizeCallback([&](int w, int h)
                              {
-                                 glViewport(0,0,w,h);
                                  width = w;
                                  height = h;
                                  solver.setWindowSize(width, height);
@@ -120,6 +119,7 @@ int main()
         if(simCanRun && !simPaused)
             solver.advanceSimulation();
 
+        glViewport(0,0,width,height);
         solver.drawCollisionMap();
         solver.drawParticles();
     }

@@ -100,6 +100,8 @@ private:
     mpu::gph::ShaderProgram m_gridUpdateShader; //!< shader used for grid update
     mpu::gph::ShaderProgram m_g2pShader; //!< shader used during grid to particle transfer
 
+    mpu::gph::Framebuffer m_fbo; //!< fbo used for particle to grid
+
     void clearCollisionMap(); //!< clears the collision map
 };
 
