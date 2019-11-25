@@ -50,7 +50,8 @@ private:
     int m_paticleBufferResizeValue{4096}; //!< number of slots added to particle buffer upon reallocation
 
     float m_timestep{0.01}; //!< length of a timestep
-    int timestepsPerFrame{1}; //!< number of timesteps to be performed per frame
+    int m_timestepsPerFrame{1}; //!< number of timesteps to be performed per frame
+    int m_g2pGroupSize{256}; //!< size of workgroup for g2p
 
     float m_particleSpawnSeperation{1};
     float m_particleMass{0.001}; //!< mass of one particle
@@ -68,7 +69,7 @@ private:
 
     // other vars
     glm::vec2 m_additionalForces{0,0}; //!< forces added via apply external force function
-    glm::ivec2 m_domainSize; //!< actual amount of grid cells / size of domain
+    glm::ivec2 m_domainSize; //!< actual amount of grid cells == size of domain
     float m_simDomainScale; //!< scale sim down for rendering
     int m_particleBufferCapacity; //!< current capacity of particle buffers
     int m_numParticles{0}; //!< number of particles in the simulation

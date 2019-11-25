@@ -1,0 +1,45 @@
+#version 450 core
+#extension GL_ARB_compute_variable_group_size : require
+
+#include "kernel.glsl"
+
+// --------------------------------------
+// uniforms
+uniform int numParticles;
+uniform vec2 simDomain;
+uniform float timestep;
+uniform float particleMass;
+
+// --------------------------------------
+// texture bindings
+uniform layout(rgba32f) restrict image2D grid;
+
+// --------------------------------------
+// buffer bindings
+layout(binding=2,std430) buffer ParticlePosition { vec2 particlePosition[]; };
+layout(binding=3,std430) buffer ParticleVelocity { vec2 particleVelocity[]; };
+layout(binding=4,std430) buffer ParticleF { mat2 particleF[]; };
+layout(binding=5,std430) buffer ParticleAffine { mat2 particleAffine[]; };
+layout(binding=6,std430) buffer ParticleVolume { float particleVolume[]; };
+
+// --------------------------------------
+// compute parameters
+layout(local_size_variable) in;
+
+void main()
+{
+    int problemSize = numParticles;
+    for(  int id = int(gl_GlobalInvocationID.x); id < problemSize; id += int(gl_NumWorkGroups.x * gl_LocalGroupSizeARB.x))
+    {
+        vec2 pos = particlePosition[id];
+        vec2 vel = particleVelocity[id];
+
+        // update position
+        pos += timestep * vel;
+
+        // clamp to simulation domain for safety
+        pos = clamp(pos, vec2(2,2), simDomain-vec2(2,2));
+
+        particlePosition[id] = pos;
+    }
+}

@@ -32,7 +32,8 @@ mpmSolver2D::mpmSolver2D(int width, int height)
       m_addCollisionObjectShader({{PROJECT_SHADER_PATH"addCollisionObject.comp"}}),
       m_addParticlesShader({{PROJECT_SHADER_PATH"addParticles.comp"}}),
       m_copyCollisionMapShader({{PROJECT_SHADER_PATH"copyCollisionMap.comp"}}),
-      m_particleRenderShader({{PROJECT_SHADER_PATH"particleRenderer.vert"},{PROJECT_SHADER_PATH"particleRenderer.frag"}})
+      m_particleRenderShader({{PROJECT_SHADER_PATH"particleRenderer.vert"},{PROJECT_SHADER_PATH"particleRenderer.frag"}}),
+      m_g2pShader({{PROJECT_SHADER_PATH"g2p.comp"}})
 {
     // bind all the buffers
     m_particlePositon.bindBase(2,GL_SHADER_STORAGE_BUFFER);
@@ -68,6 +69,10 @@ mpmSolver2D::mpmSolver2D(int width, int height)
     m_particleRenderShader.uniform1b("falloff",m_falloff);
     m_particleRenderShader.uniform2f("domainSize", m_domainSize);
     m_addParticlesShader.uniform1f("spawnSeperation", m_particleSpawnSeperation);
+    m_g2pShader.uniform1i("numParticles",m_numParticles);
+    m_g2pShader.uniform2f("simDomain",m_domainSize);
+    m_g2pShader.uniform1f("timestep",m_timestep);
+    m_g2pShader.uniform1f("particleMass",m_particleMass);
 
     // set up shader for collision map renderer
     m_collisionMapRenderer.setScreenFillShader(PROJECT_SHADER_PATH"collisionMap.frag");
@@ -100,10 +105,10 @@ void mpmSolver2D::setWindowSize(int width, int height)
     // rebind collision map as texture
     m_gridCollision.bind(2);
 
-    // update renderer uniforms
+    // uniforms
     m_particleRenderShader.uniform1f("renderScale",m_simDomainScale);
     m_particleRenderShader.uniform2f("domainSize", m_domainSize);
-
+    m_g2pShader.uniform2f("simDomain",m_domainSize);
 }
 
 
@@ -163,6 +168,9 @@ void mpmSolver2D::addParticles(glm::vec2 position, float radius)
     m_addParticlesShader.dispatch(numAdded/2,32);
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
     m_numParticles += numAdded;
+
+    // update uniforms
+    m_g2pShader.uniform1i("numParticles",m_numParticles);
 }
 
 void mpmSolver2D::addCollisionObject(glm::vec2 position, float radius)
@@ -178,12 +186,19 @@ void mpmSolver2D::addCollisionObject(glm::vec2 position, float radius)
 
 void mpmSolver2D::drawUI(bool* shouldBeDrawn)
 {
-
+    if(ImGui::Begin("mpmSolver",shouldBeDrawn))
+    {
+    }
+    ImGui::End();
 }
 
 void mpmSolver2D::advanceSimulation()
 {
+    glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
+    glMemoryBarrier(GL_ALL_BARRIER_BITS);
+    m_g2pShader.dispatch(m_numParticles,m_g2pGroupSize);
+    glMemoryBarrier(GL_ALL_BARRIER_BITS);
 }
 
 void mpmSolver2D::drawCollisionMap()
