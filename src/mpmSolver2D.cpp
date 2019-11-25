@@ -78,6 +78,12 @@ mpmSolver2D::mpmSolver2D(int width, int height)
     m_gridUpdateShader.uniform2f("simDomain",m_domainSize);
     m_gridUpdateShader.uniform1f("timestep",m_timestep);
     m_p2gShader.uniform2f("simDomain",m_domainSize);
+    m_p2gShader.uniform1f("gridCellSize",1);
+    m_p2gShader.uniform1f("apicFactor",4);
+    m_p2gShader.uniform1f("pMass",m_particleMass);
+    m_p2gShader.uniform1f("timestep",m_timestep);
+    m_p2gShader.uniform1f("bulkModulus",m_bulkModulus);
+    m_p2gShader.uniform1f("exponentialGamma",m_exponentialGamma);
 
     // set up shader for collision map renderer
     m_collisionMapRenderer.setScreenFillShader(PROJECT_SHADER_PATH"collisionMap.frag");
@@ -129,7 +135,7 @@ void mpmSolver2D::addParticles(glm::vec2 position, float radius)
 {
     position.x *= m_domainSize.x;
     position.y *= m_domainSize.y;
-    int numSqrt = 2.0*radius / m_particleSpawnSeperation +1;
+    int numSqrt = (2.0*radius / m_particleSpawnSeperation) +1;
     int numAdded = numSqrt*numSqrt;
 
     // check if there is still space
@@ -196,37 +202,41 @@ void mpmSolver2D::drawUI(bool* shouldBeDrawn)
 {
     if(ImGui::Begin("mpmSolver",shouldBeDrawn))
     {
+        ImGui::Text("NumParticles: %i", m_numParticles);
     }
     ImGui::End();
 }
 
 void mpmSolver2D::advanceSimulation()
 {
-    m_gridUpdateShader.uniform2f("externalAcc", m_additionalAcc + m_gravity);
-    m_additionalAcc = glm::vec2(0);
+    for(int i =0; i<m_timestepsPerFrame; i++)
+    {
+        m_gridUpdateShader.uniform2f("externalAcc", m_additionalAcc + m_gravity);
+        m_additionalAcc = glm::vec2(0);
 
-    glm::vec4 clear(0,0,0,0);
-    m_gridVelocityMass.clear(glm::value_ptr(clear),GL_RGBA,GL_FLOAT,0);
+        glm::vec4 clear(0,0,0,0);
+        m_gridVelocityMass.clear(glm::value_ptr(clear),GL_RGBA,GL_FLOAT,0);
 
-    glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
-    // use rasterization pipeline for particle to grid
-    m_fbo.attach( GL_COLOR_ATTACHMENT0, m_gridVelocityMass);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_ONE, GL_ONE);
-    m_fbo.use();
-    glViewport(0,0,m_domainSize.x,m_domainSize.y);
-    m_vao.bind();
-    m_p2gShader.use();
-    glDrawArrays(GL_POINTS,0,m_numParticles);
-    m_fbo.disable();
-    glDisable(GL_BLEND);
+        // use rasterization pipeline for particle to grid
+        m_fbo.attach( GL_COLOR_ATTACHMENT0, m_gridVelocityMass);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_ONE, GL_ONE);
+        m_fbo.use();
+        glViewport(0,0,m_domainSize.x,m_domainSize.y);
+        m_vao.bind();
+        m_p2gShader.use();
+        glDrawArrays(GL_POINTS,0,m_numParticles);
+        m_fbo.disable();
+        glDisable(GL_BLEND);
 
-    glMemoryBarrier(GL_ALL_BARRIER_BITS);
-    m_gridUpdateShader.dispatch(m_domainSize,m_gridUpdateGroupSize);
-    glMemoryBarrier(GL_ALL_BARRIER_BITS);
-    m_g2pShader.dispatch(m_numParticles,m_g2pGroupSize);
-    glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        m_gridUpdateShader.dispatch(m_domainSize,m_gridUpdateGroupSize);
+        glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        m_g2pShader.dispatch(m_numParticles,m_g2pGroupSize);
+        glMemoryBarrier(GL_ALL_BARRIER_BITS);
+    }
 }
 
 void mpmSolver2D::drawCollisionMap()

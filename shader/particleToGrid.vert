@@ -6,6 +6,8 @@ layout(location=0) in vec4 input_position;
 
 uniform vec2 simDomain;
 
+out flat int id;
+
 void main()
 {
     vec2 pos = input_position.xy;
@@ -15,5 +17,5 @@ void main()
     pos *=2;
     gl_Position =  vec4(pos,0,1);
     gl_PointSize = 3;
-
+    id = gl_VertexID;
 }
