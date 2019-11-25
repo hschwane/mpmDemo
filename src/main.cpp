@@ -37,19 +37,40 @@ int main()
     // set background color
     glClearColor( .2f, .2f, .2f, 1.0f);
 
+    // create mpm solver
+    mpmSolver2D solver(float(width) / float(height));
+
     // add resize callback
     window.addFBSizeCallback([&](int w, int h)
                              {
                                  glViewport(0,0,w,h);
                                  width = w;
                                  height = h;
+                                 solver.setAspectRation(float(width) / float(height));
                              });
+
+    bool simShouldRun = true; //!< should the simulation be running?
+    bool showSolverUI = true; //!< should solver UI be drawn?
+
+    // add some keybindings
+    mpu::gph::Input::addButton("ToggleSolverUI","Toggles visibility of the solver ui", [&](mpu::gph::Window& wnd){ showSolverUI = !showSolverUI;});
+    mpu::gph::Input::mapKeyToInput("ToggleSolverUI", GLFW_KEY_S);
 
     // Main loop
     while (window.frameEnd(), mpu::gph::Input::update(), window.frameBegin())
     {
         // show imgui demo window
-        ImGui::ShowDemoWindow();
+//        ImGui::ShowDemoWindow();
+
+        if(showSolverUI)
+            solver.drawUI(&showSolverUI);
+
+        if(simShouldRun)
+            solver.advanceSimulation();
+
+        solver.drawParticles();
+        solver.drawParticles();
+
     }
     return 0;
 }
