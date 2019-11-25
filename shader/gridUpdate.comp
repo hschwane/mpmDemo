@@ -30,7 +30,7 @@ void main()
 
             if(mass > 0)
             {
-                // calc celocity and add external acc
+                // calc velocity from momentum and add external acc
                 vec2 vel;
                 vel.x = imageLoad(gridVX,node).x;
                 vel.y = imageLoad(gridVY,node).x;

@@ -43,9 +43,9 @@ void main()
         vec2 cellDiff = (pPos - cellId) -0.5;
 
         vec2 weight[3];
-        weight[0] = 0.5f * vec2( pow(0.5f - cellDiff.x, 2.0f),   pow(0.5f - cellDiff.y, 2.0f));
-        weight[1] = 0.75f * vec2( pow(cellDiff.x, 2), pow(cellDiff.y, 2));
-        weight[2] = 0.5f * vec2( pow(0.5f + cellDiff.x, 2), pow(0.5f + cellDiff.y, 2));
+        weight[0] = 0.5f * vec2( (0.5f-cellDiff.x)*(0.5f-cellDiff.x), (0.5f-cellDiff.y)*(0.5f-cellDiff.y));
+        weight[1] = 0.75f * vec2( cellDiff.x*cellDiff.x, cellDiff.y*cellDiff.y);
+        weight[2] = 0.5f * vec2( (0.5f + cellDiff.x)*(0.5f + cellDiff.x), (0.5f + cellDiff.y)*(0.5f + cellDiff.y));
 
         for( int gx = 0; gx < 3; gx++)
             for( int gy = 0; gy < 3; gy++)
@@ -53,13 +53,13 @@ void main()
                 float wip = weight[gx].x * weight[gy].y;
 
                 ivec2  cellIndex = ivec2(cellId.x + gx-1, cellId.y +gy-1);
-                vec2 xdiff = (pPos - cellIndex) + 0.5;
+                vec2 xdiff = (cellIndex - pPos) + 0.5;
 
                 vec2 gridVel;
                 gridVel.x = imageLoad(gridVX,cellIndex).x;
                 gridVel.y = imageLoad(gridVY,cellIndex).x;
 
-                pVel += gridVel;
+                pVel += wip * gridVel;
                 pAffine += wip * mat2( gridVel.x * xdiff.x, gridVel.x * xdiff.y,
                                         gridVel.y * xdiff.x, gridVel.y * xdiff.y);
             }
