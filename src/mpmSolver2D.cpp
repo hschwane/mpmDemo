@@ -77,19 +77,23 @@ mpmSolver2D::mpmSolver2D(int width, int height)
     m_particleRenderShader.uniform2f("domainSize", m_domainSize);
     m_addParticlesShader.uniform1f("spawnSeperation", m_particleSpawnSeperation);
 
-    m_g2pShader.uniform1i("grid",0);
+    m_g2pShader.uniform1i("gridVX",3);
+    m_g2pShader.uniform1i("gridVY",4);
+    m_g2pShader.uniform1i("gridM",5);
     m_g2pShader.uniform1i("numParticles",m_numParticles);
     m_g2pShader.uniform2f("simDomain",m_domainSize);
     m_g2pShader.uniform1f("timestep",m_timestep);
     m_g2pShader.uniform1f("pMass",m_particleMass);
     m_g2pShader.uniform1f("gridCellSize",1);
     m_g2pShader.uniform1f("apicFactor",4);
+
     m_gridUpdateShader.uniform1i("gridVX",3);
     m_gridUpdateShader.uniform1i("gridVY",4);
     m_gridUpdateShader.uniform1i("gridM",5);
     m_gridUpdateShader.uniform1i("collision",1);
     m_gridUpdateShader.uniform2f("simDomain",m_domainSize);
     m_gridUpdateShader.uniform1f("timestep",m_timestep);
+
     m_p2gShaderAtomic.uniform1i("numParticles",m_numParticles);
     m_p2gShaderAtomic.uniform1f("pMass",m_particleMass);
     m_p2gShaderAtomic.uniform1f("gridCellSize",1);
@@ -208,6 +212,7 @@ void mpmSolver2D::addParticles(glm::vec2 position, float radius)
 
     // update uniforms
     m_g2pShader.uniform1i("numParticles",m_numParticles);
+    m_p2gShaderAtomic.uniform1i("numParticles",m_numParticles);
 }
 
 void mpmSolver2D::addCollisionObject(glm::vec2 position, float radius)
@@ -234,8 +239,8 @@ void mpmSolver2D::advanceSimulation()
 {
     for(int i =0; i<m_timestepsPerFrame; i++)
     {
-        m_gridUpdateShader.uniform2f("externalAcc", m_additionalAcc + m_gravity);
-        m_additionalAcc = glm::vec2(0);
+        m_gridUpdateShader.uniform2f("externalAcc", m_gravity);
+//        m_additionalAcc = glm::vec2(0);
 
         float clear = 0.0f;
         m_gridVelX.clear(&clear,GL_RED,GL_FLOAT,0);
@@ -255,31 +260,34 @@ void mpmSolver2D::advanceSimulation()
 //        glDrawArrays(GL_POINTS,0,m_numParticles);
 //        m_fbo.disable();
 //        glDisable(GL_BLEND);
+
         m_p2gShaderAtomic.dispatch(m_numParticles,m_g2pGroupSize);
         glMemoryBarrier(GL_ALL_BARRIER_BITS);
-//        m_gridUpdateShader.dispatch(m_domainSize,m_gridUpdateGroupSize);
-//        glMemoryBarrier(GL_ALL_BARRIER_BITS);
-//        m_g2pShader.dispatch(m_numParticles,m_g2pGroupSize);
-//        glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        m_gridUpdateShader.dispatch(m_domainSize,m_gridUpdateGroupSize);
+        glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        m_g2pShader.dispatch(m_numParticles,m_g2pGroupSize);
+        glMemoryBarrier(GL_ALL_BARRIER_BITS);
     }
 }
 
 void mpmSolver2D::drawCollisionMap()
 {
     m_collisionMapRenderer.draw();
-    static mpu::gph::ScreenFillingTri tri;
-    tri.setScreenFillShader(MPU_LIB_SHADER_PATH"drawTexture.frag");
-    tri.shader().uniform1i("colorMap",4);
-    m_gridMass.bind(4);
-
-    tri.draw();
+//    static mpu::gph::ScreenFillingTri tri;
+//    tri.setScreenFillShader(MPU_LIB_SHADER_PATH"drawTexture.frag");
+//    tri.shader().uniform1i("colorMap",4);
+//    m_gridVelX.bind(4);
+//    m_gridVelY.bind(4);
+//    m_gridMass.bind(4);
+//
+//    tri.draw();
 }
 
 void mpmSolver2D::drawParticles()
 {
-//    m_vao.bind();
-//    m_particleRenderShader.use();
-//    glDrawArrays(GL_POINTS,0,m_numParticles);
+    m_vao.bind();
+    m_particleRenderShader.use();
+    glDrawArrays(GL_POINTS,0,m_numParticles);
 }
 
 void mpmSolver2D::clearCollisionMap()

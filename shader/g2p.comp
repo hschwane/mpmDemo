@@ -59,7 +59,7 @@ void main()
                 gridVel.x = imageLoad(gridVX,cellIndex).x;
                 gridVel.y = imageLoad(gridVY,cellIndex).x;
 
-                pVel += wip * gridVel;
+                pVel += gridVel;
                 pAffine += wip * mat2( gridVel.x * xdiff.x, gridVel.x * xdiff.y,
                                         gridVel.y * xdiff.x, gridVel.y * xdiff.y);
             }
