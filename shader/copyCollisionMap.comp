@@ -28,7 +28,7 @@ void main()
             }
             else
             {
-                imageStore(collisionImageDst, pixel, vec4( 1, 1, 1, 1));
+                imageStore(collisionImageDst, pixel, vec4( 0.5, 1, 1, 1));
             }
         }
 }

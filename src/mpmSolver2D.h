@@ -52,13 +52,16 @@ private:
     float m_timestep{0.01}; //!< length of a timestep
     int timestepsPerFrame{1}; //!< number of timesteps to be performed per frame
 
-    float m_particleSpawnSeperation{0.1};
+    float m_particleSpawnSeperation{1};
     float m_particleMass{0.001}; //!< mass of one particle
     float m_bulkModulus{5}; //!< bulk modulus of the material
     float m_exponentialGamma{1}; //!< exponential gamme of the material
     glm::vec2 m_gravity{0,-1}; //!< gravity
 
-    float m_particleRenderSize{0.01}; //!< render size of particles
+    float m_particleRenderSize{1.0}; //!< render size of particles
+    float m_particleBrightness{1.0}; //!< brightness of particles
+    bool m_falloff{true}; //!< render particles with soft edges
+    bool m_colorcodeVelocity{false}; //!< colorcode particle velocities
     glm::vec3 m_particleColor{0.098, 0.670, 0.921}; //!< color of particles
     glm::vec3 m_collisionColor{0.921, 0.584, 0.203}; //!< color of the collision boundary
     glm::vec3 m_backgroundColor{ .2f, .2f, .2f}; // color drawn in the background
@@ -81,8 +84,12 @@ private:
     mpu::gph::Texture m_gridVelocityMass; //!< velocities and mass on the grid (mass is alpha component)
     mpu::gph::Texture m_gridCollision; //!< collision level set on the grid
 
+    // vao for rendering
+    mpu::gph::VertexArray m_vao; //!< vao for rendering
+
     // shader
     mpu::gph::ShaderProgram m_particleRenderShader; //!< shader to draw particles
+    mpu::gph::ShaderProgram m_addParticlesShader; //!< adds a patch of particles
     mpu::gph::ShaderProgram m_addCollisionObjectShader; //!< adds a patch of collision object
     mpu::gph::ShaderProgram m_copyCollisionMapShader; //!< copy collision map from one texture to another
     mpu::gph::ScreenFillingTri m_collisionMapRenderer; //!< renders collision map

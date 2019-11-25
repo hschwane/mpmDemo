@@ -1,0 +1,35 @@
+#version 450 core
+#extension GL_ARB_compute_variable_group_size : require
+
+// --------------------------------------
+// uniforms
+uniform vec2 addPosition;
+uniform float addRadius;
+uniform float spawnSeperation;
+uniform int startID;
+
+// --------------------------------------
+// buffer bindings
+layout(binding=2,std430) buffer ParticlePosition { vec2 particlePosition[]; };
+layout(binding=3,std430) buffer ParticleVelocity { vec2 particleVelocity[]; };
+layout(binding=4,std430) buffer ParticleF { mat2 particleF[]; };
+layout(binding=5,std430) buffer ParticleAffine { mat2 particleAffine[]; };
+layout(binding=6,std430) buffer ParticleVolume { float particleVolume[]; };
+
+// --------------------------------------
+// compute parameters
+layout(local_size_variable) in;
+
+void main()
+{
+    int problemSizeSqrt = int(2.0*addRadius / spawnSeperation +1);
+    int problemSize = problemSizeSqrt * problemSizeSqrt;
+    for(  int id = int(gl_GlobalInvocationID.x); id < problemSize; id += int(gl_NumWorkGroups.x * gl_LocalGroupSizeARB.x))
+    {
+        vec2 pos = addPosition - vec2(addRadius,addRadius) + spawnSeperation*vec2(id%problemSizeSqrt,id/problemSizeSqrt);
+
+        particlePosition[startID + id] = pos;
+        particleVelocity[startID + id] = vec2(0,0);
+        particleVolume[startID + id] = 4.0*addRadius*addRadius / problemSize;
+    }
+}

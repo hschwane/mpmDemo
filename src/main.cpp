@@ -49,8 +49,8 @@ int main()
                                  solver.setWindowSize(width, height);
                              });
 
-    float backgroundBrushSize = 10;
-    float particleBrushSize = 10;
+    float backgroundBrushSize = 2;
+    float particleBrushSize = 2;
     bool simCanRun = true; //!< should the simulation be running?
     bool simPaused = false; //!< should the simulation be running?
     bool showSolverUI = true; //!< should solver UI be drawn?
@@ -74,6 +74,15 @@ int main()
         solver.addCollisionObject( pos, backgroundBrushSize);
     });
     mpu::gph::Input::mapMouseButtonToInput("AddBackground",GLFW_MOUSE_BUTTON_LEFT,mpu::gph::Input::ButtonBehavior::whenDown);
+
+    mpu::gph::Input::addButton("AddParticles","Adds more particles", [&](mpu::gph::Window& wnd)
+    {
+        glm::vec2 pos = wnd.getCursorPos();
+        pos.x /= float(width);
+        pos.y = 1.0 - pos.y /float(height);
+        solver.addParticles( pos, particleBrushSize);
+    });
+    mpu::gph::Input::mapMouseButtonToInput("AddParticles",GLFW_MOUSE_BUTTON_RIGHT,mpu::gph::Input::ButtonBehavior::onPress);
 
     // Main loop
     while (window.frameEnd(), mpu::gph::Input::update(), window.frameBegin())
@@ -100,7 +109,7 @@ int main()
                 }
 
                 ImGui::DragFloat("Collision Brush Size",&backgroundBrushSize);
-                ImGui::DragFloat("Particle Brush Size",&backgroundBrushSize);
+                ImGui::DragFloat("Particle Brush Size",&particleBrushSize);
             }
             ImGui::End();
         }
@@ -113,7 +122,6 @@ int main()
 
         solver.drawCollisionMap();
         solver.drawParticles();
-
     }
     return 0;
 }
