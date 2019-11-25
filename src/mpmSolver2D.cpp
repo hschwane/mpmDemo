@@ -40,6 +40,9 @@ mpmSolver2D::mpmSolver2D(int width, int height)
       m_p2gShader({{PROJECT_SHADER_PATH"particleToGrid.vert"},{PROJECT_SHADER_PATH"particleToGrid.frag"}}),
       m_p2gShaderAtomic({{PROJECT_SHADER_PATH"p2g.comp"}})
 {
+    m_currentWidth = width;
+    m_currentHight = height;
+
     // bind all the buffers
     m_particlePositon.bindBase(2,GL_SHADER_STORAGE_BUFFER);
     m_particleVelocity.bindBase(3,GL_SHADER_STORAGE_BUFFER);
@@ -120,6 +123,8 @@ mpmSolver2D::mpmSolver2D(int width, int height)
 
 void mpmSolver2D::setWindowSize(int width, int height)
 {
+    m_currentWidth = width;
+    m_currentHight = height;
     m_domainSize = glm::vec2((float(width) / float(height)) * m_gridHeight, m_gridHeight);
     m_simDomainScale = float(height)/(m_gridHeight);
 
@@ -158,11 +163,11 @@ void mpmSolver2D::applyExternalAcc(glm::vec2 force)
     m_additionalAcc += force;
 }
 
-void mpmSolver2D::addParticles(glm::vec2 position, float radius)
+void mpmSolver2D::addParticles(glm::vec2 position)
 {
     position.x *= m_domainSize.x;
     position.y *= m_domainSize.y;
-    int numSqrt = (2.0*radius / m_particleSpawnSeperation) +1;
+    int numSqrt = (2.0*m_particleBrushSize / m_particleSpawnSeperation) +1;
     int numAdded = numSqrt*numSqrt;
 
     // check if there is still space
@@ -204,7 +209,7 @@ void mpmSolver2D::addParticles(glm::vec2 position, float radius)
 
     // generate new particles
     m_addParticlesShader.uniform2f("addPosition", position);
-    m_addParticlesShader.uniform1f("addRadius", radius);
+    m_addParticlesShader.uniform1f("addRadius", m_particleBrushSize);
     m_addParticlesShader.uniform1i("startID", m_numParticles);
     m_addParticlesShader.dispatch(numAdded/2,32);
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
@@ -215,12 +220,12 @@ void mpmSolver2D::addParticles(glm::vec2 position, float radius)
     m_p2gShaderAtomic.uniform1i("numParticles",m_numParticles);
 }
 
-void mpmSolver2D::addCollisionObject(glm::vec2 position, float radius)
+void mpmSolver2D::addCollisionObject(glm::vec2 position)
 {
     position.x *= m_domainSize.x;
     position.y *= m_domainSize.y;
     m_addCollisionObjectShader.uniform2i("addPosition", position);
-    m_addCollisionObjectShader.uniform1f("addRadius", radius);
+    m_addCollisionObjectShader.uniform1f("addRadius", m_obstacleBrushSize);
 
     m_addCollisionObjectShader.dispatch(m_domainSize/2, {16, 16});
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
@@ -231,6 +236,40 @@ void mpmSolver2D::drawUI(bool* shouldBeDrawn)
     if(ImGui::Begin("mpmSolver",shouldBeDrawn))
     {
         ImGui::Text("NumParticles: %i", m_numParticles);
+        if(ImGui::DragFloat("Timestep",&m_timestep,0.001))
+        {
+            m_g2pShader.uniform1f("timestep",m_timestep);
+            m_p2gShaderAtomic.uniform1f("timestep",m_timestep);
+            m_gridUpdateShader.uniform1f("timestep",m_timestep);
+        }
+
+        ImGui::DragInt("Timesteps per Frame",&m_timestepsPerFrame);
+
+        if(ImGui::DragInt("Grid Resolution", &m_gridHeight))
+            setWindowSize(m_currentWidth,m_currentHight); // trigger grid rebuild
+
+        ImGui::Separator();
+
+        ImGui::DragFloat("Collision Brush Size",&m_obstacleBrushSize,0.5);
+        ImGui::DragFloat("Particle Brush Size",&m_particleBrushSize,0.5);
+        ImGui::DragFloat("Spawn seperation",&m_particleSpawnSeperation,0.1);
+
+        if(ImGui::Button("Remove Particles"))
+            m_numParticles=0;
+        ImGui::SameLine();
+        if(ImGui::Button("Remove Obstacles"))
+            clearCollisionMap();
+
+        ImGui::Separator();
+
+        ImGui::DragFloat2("Gravity",glm::value_ptr(m_gravity));
+        if(ImGui::DragFloat("ParticleMass", &m_particleMass))
+        {
+            m_g2pShader.uniform1f("pMass",m_particleMass);
+            m_p2gShaderAtomic.uniform1f("pMass",m_particleMass);
+        }
+
+
     }
     ImGui::End();
 }
@@ -239,8 +278,8 @@ void mpmSolver2D::advanceSimulation()
 {
     for(int i =0; i<m_timestepsPerFrame; i++)
     {
-        m_gridUpdateShader.uniform2f("externalAcc", m_gravity);
-//        m_additionalAcc = glm::vec2(0);
+        m_gridUpdateShader.uniform2f("externalAcc", m_gravity + m_additionalAcc);
+        m_additionalAcc = glm::vec2(0);
 
         float clear = 0.0f;
         m_gridVelX.clear(&clear,GL_RED,GL_FLOAT,0);

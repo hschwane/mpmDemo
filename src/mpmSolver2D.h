@@ -35,8 +35,8 @@ public:
     void setWindowSize(int width, int height); //!< set new aspect ratio for the simulation domain (will resize the grid)
 
     void applyExternalAcc(glm::vec2 force); //!< apply an external force on the material
-    void addParticles(glm::vec2 position, float radius); //!< add particles in radius around position
-    void addCollisionObject(glm::vec2 position, float radius); //!< add collision object in radius around position
+    void addParticles(glm::vec2 position); //!< add particles in radius around position
+    void addCollisionObject(glm::vec2 position); //!< add collision object in radius around position
 
     void drawUI(bool* shouldBeDrawn); //!< show the user interface
     void advanceSimulation(); //!< advance the simulation
@@ -49,8 +49,8 @@ private:
     int m_gridHeight{512}; //!< number of grid cells in Y direction
     int m_paticleBufferResizeValue{4096}; //!< number of slots added to particle buffer upon reallocation
 
-    float m_timestep{0.01}; //!< length of a timestep
-    int m_timestepsPerFrame{1}; //!< number of timesteps to be performed per frame
+    float m_timestep{0.1}; //!< length of a timestep
+    int m_timestepsPerFrame{2}; //!< number of timesteps to be performed per frame
     int m_g2pGroupSize{256}; //!< size of workgroup for g2p
     glm::ivec2 m_gridUpdateGroupSize{16,16}; //!< size of workgroup for gridUpdate
 
@@ -58,7 +58,7 @@ private:
     float m_particleMass{0.1}; //!< mass of one particle
     float m_bulkModulus{5}; //!< bulk modulus of the material
     float m_exponentialGamma{1}; //!< exponential gamme of the material
-    glm::vec2 m_gravity{0,-5}; //!< gravity
+    glm::vec2 m_gravity{0,-10}; //!< gravity
 
     float m_particleRenderSize{1.0}; //!< render size of particles
     float m_particleBrightness{1.0}; //!< brightness of particles
@@ -66,7 +66,9 @@ private:
     bool m_colorcodeVelocity{false}; //!< colorcode particle velocities
     glm::vec3 m_particleColor{0.098, 0.670, 0.921}; //!< color of particles
     glm::vec3 m_collisionColor{0.921, 0.584, 0.203}; //!< color of the collision boundary
-    glm::vec3 m_backgroundColor{ .2f, .2f, .2f}; // color drawn in the background
+    glm::vec3 m_backgroundColor{ .2f, .2f, .2f}; //!< color drawn in the background
+    float m_obstacleBrushSize{15}; //!< radius of grid cells effected when drawing obstacles
+    float m_particleBrushSize{15}; //!< radius of grid cells effected when drawing particles
 
     // other vars
     glm::vec2 m_additionalAcc{0, 0}; //!< acceleration added via apply external acc function
@@ -74,6 +76,7 @@ private:
     float m_simDomainScale; //!< scale sim down for rendering
     int m_particleBufferCapacity; //!< current capacity of particle buffers
     int m_numParticles{0}; //!< number of particles in the simulation
+    int m_currentWidth, m_currentHight; //!< current width and height of the window
 
     // particle data
     mpu::gph::Buffer<glm::vec2> m_particlePositon; //!< position of particles

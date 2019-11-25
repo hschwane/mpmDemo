@@ -69,7 +69,7 @@ int main()
         glm::vec2 pos = wnd.getCursorPos();
         pos.x /= float(width);
         pos.y = 1.0 - pos.y /float(height);
-        solver.addCollisionObject( pos, backgroundBrushSize);
+        solver.addCollisionObject( pos);
     });
     mpu::gph::Input::mapMouseButtonToInput("AddBackground",GLFW_MOUSE_BUTTON_LEFT,mpu::gph::Input::ButtonBehavior::whenDown);
 
@@ -78,7 +78,7 @@ int main()
         glm::vec2 pos = wnd.getCursorPos();
         pos.x /= float(width);
         pos.y = 1.0 - pos.y /float(height);
-        solver.addParticles( pos, particleBrushSize);
+        solver.addParticles( pos);
     });
     mpu::gph::Input::mapMouseButtonToInput("AddParticles",GLFW_MOUSE_BUTTON_RIGHT,mpu::gph::Input::ButtonBehavior::onPress);
 
@@ -105,9 +105,6 @@ int main()
                 {
                     solver = mpmSolver2D(width, height);
                 }
-
-                ImGui::DragFloat("Collision Brush Size",&backgroundBrushSize);
-                ImGui::DragFloat("Particle Brush Size",&particleBrushSize);
             }
             ImGui::End();
         }
