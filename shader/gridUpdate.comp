@@ -24,9 +24,9 @@ void main()
         for(  node.x= int(gl_GlobalInvocationID.x); node.x < gridSize.x; node.x += int(gl_NumWorkGroups.x * gl_LocalGroupSizeARB.x))
         {
             // load momentum and mass
-            const vec4 mom_m = imageLoad(grid,node);
+            const vec3 mom_m = imageLoad(grid,node).xyz;
 
-            if(mom_m.w > 0)
+            if(mom_m.z > 0)
             {
                 // calc celocity and add external acc
                 vec2 vel = mom_m.xy / mom_m.z;

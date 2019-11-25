@@ -9,6 +9,8 @@ uniform int numParticles;
 uniform vec2 simDomain;
 uniform float timestep;
 uniform float particleMass;
+uniform float gridCellSize=1;
+uniform float apicFactor=4.0f;
 
 // --------------------------------------
 // texture bindings
@@ -31,15 +33,42 @@ void main()
     int problemSize = numParticles;
     for(  int id = int(gl_GlobalInvocationID.x); id < problemSize; id += int(gl_NumWorkGroups.x * gl_LocalGroupSizeARB.x))
     {
-        vec2 pos = particlePosition[id];
-        vec2 vel = particleVelocity[id];
+        vec2 pPos = particlePosition[id];
+
+
+        // loop over cells, compute affine APIC matrix and velocity
+        mat2 affine = mat2(0);
+        vec2 pVel = vec2(0);
+        const ivec2 middleCellId = ivec2(pPos);
+        for( int cidy = middleCellId.y-1; cidy < middleCellId.y+2; cidy++)
+            for( int cidx = middleCellId.x -1; cidy < middleCellId.y+2; cidx++)
+            {
+                ivec2 gridCell = ivec2(cidx,cidy);
+                vec2 gridCellPos = vec2(gridCell) + vec2(0.5,0.5);
+
+                float wip = kernel(gridCellPos,pPos,gridCellSize);
+                vec2 xdiff = gridCellPos - pPos;
+
+                vec3 velm = imageLoad(grid,gridCell).xyz;
+
+                pVel += wip * velm.xy;
+                affine += wip * mat2( velm.x * xdiff.x, velm.x * xdiff.y,
+                                        velm.y * xdiff.x, velm.y * xdiff.y);
+            }
 
         // update position
-        pos += timestep * vel;
+        pPos += timestep * pVel;
+
+        // update F
+        mat2 pF = (mat2(1.0f) + timestep * apicFactor * affine) * particleF[id];
 
         // clamp to simulation domain for safety
-        pos = clamp(pos, vec2(2,2), simDomain-vec2(3,3));
+        pPos = clamp(pPos, vec2(2,2), simDomain-vec2(3,3));
 
-        particlePosition[id] = pos;
+        // store updated values
+        particlePosition[id] = pPos;
+        particleVelocity[id] = pVel;
+        particleAffine[id] = affine;
+        particleF[id] = pF;
     }
 }
