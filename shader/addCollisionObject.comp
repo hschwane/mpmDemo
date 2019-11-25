@@ -1,0 +1,31 @@
+#version 450 core
+#extension GL_ARB_compute_variable_group_size : require
+
+// --------------------------------------
+// uniforms
+uniform ivec2 addPosition;
+uniform float addRadius;
+
+// --------------------------------------
+// texture bindings
+uniform layout(r16f) restrict image2D collisionImage; // texture where output data is written
+
+// --------------------------------------
+// compute parameters
+layout(local_size_variable) in;
+
+void main()
+{
+    ivec2 outSize = imageSize(collisionImage);
+    ivec2 pixel;
+    for(  pixel.y= int(gl_GlobalInvocationID.y); pixel.y < outSize.y; pixel.y += int(gl_NumWorkGroups.y * gl_LocalGroupSizeARB.y))
+        for(  pixel.x= int(gl_GlobalInvocationID.x); pixel.x < outSize.x; pixel.x += int(gl_NumWorkGroups.x * gl_LocalGroupSizeARB.x))
+        {
+            float dist = length( vec2(addPosition) - vec2(pixel) );
+            if(dist <= addRadius)
+            {
+                float value = imageLoad(collisionImage, pixel).x;
+                imageStore(collisionImage, pixel, vec4( value + (dist-addRadius), 1, 1, 1));
+            }
+        }
+}

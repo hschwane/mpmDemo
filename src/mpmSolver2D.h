@@ -31,8 +31,8 @@ class mpmSolver2D
 {
 public:
 
-    explicit mpmSolver2D(float aspectRatio); //!< constructor of the mpm solver
-    void setAspectRation(float aspectRatio); //!< set new aspect ratio for the simulation domain (will resize the grid)
+    explicit mpmSolver2D(int width, int height); //!< constructor of the mpm solver
+    void setWindowSize(int width, int height); //!< set new aspect ratio for the simulation domain (will resize the grid)
 
     void applyExternalForce(glm::vec2 force); //!< apply an external force on the material
     void addParticles(glm::vec2 position, float radius); //!< add particles in radius around position
@@ -61,10 +61,11 @@ private:
     float m_particleRenderSize{0.01}; //!< render size of particles
     glm::vec3 m_particleColor{0.098, 0.670, 0.921}; //!< color of particles
     glm::vec3 m_collisionColor{0.921, 0.584, 0.203}; //!< color of the collision boundary
+    glm::vec3 m_backgroundColor{ .2f, .2f, .2f}; // color drawn in the background
 
     // other vars
     glm::vec2 m_additionalForces{0,0}; //!< forces added via apply external force function
-    glm::ivec2 m_gridSize; //!< actual amount of grid cells
+    glm::ivec2 m_domainSize; //!< actual amount of grid cells / size of domain
     float m_simDomainScale; //!< scale sim down for rendering
     int m_particleBufferCapacity; //!< current capacity of particle buffers
     int m_numParticles{0}; //!< number of particles in the simulation
@@ -82,11 +83,15 @@ private:
 
     // shader
     mpu::gph::ShaderProgram m_particleRenderShader; //!< shader to draw particles
-    mpu::gph::ShaderProgram m_collisionMapRenderShader; //!< shader to draw the collision map
+    mpu::gph::ShaderProgram m_addCollisionObjectShader; //!< adds a patch of collision object
+    mpu::gph::ShaderProgram m_copyCollisionMapShader; //!< copy collision map from one texture to another
+    mpu::gph::ScreenFillingTri m_collisionMapRenderer; //!< renders collision map
 
     mpu::gph::ShaderProgram m_p2gShader; //!< shader used during particle to grid transfer
     mpu::gph::ShaderProgram m_gridUpdateShader; //!< shader used for grid update
     mpu::gph::ShaderProgram m_g2pShader; //!< shader used during grid to particle transfer
+
+    void clearCollisionMap(); //!< clears the collision map
 };
 
 

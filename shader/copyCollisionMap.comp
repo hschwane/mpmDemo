@@ -1,0 +1,34 @@
+#version 450 core
+#extension GL_ARB_compute_variable_group_size : require
+
+// --------------------------------------
+// uniforms
+
+// --------------------------------------
+// texture bindings
+uniform layout(r16f) restrict image2D collisionImageSrc; // texture where output data is written
+uniform layout(r16f) restrict image2D collisionImageDst; // texture where output data is written
+
+// --------------------------------------
+// compute parameters
+layout(local_size_variable) in;
+
+void main()
+{
+    ivec2 srcSize = imageSize(collisionImageSrc);
+    ivec2 dstSize = imageSize(collisionImageDst);
+    ivec2 pixel;
+    for(  pixel.y= int(gl_GlobalInvocationID.y); pixel.y < dstSize.y; pixel.y += int(gl_NumWorkGroups.y * gl_LocalGroupSizeARB.y))
+        for(  pixel.x= int(gl_GlobalInvocationID.x); pixel.x < dstSize.x; pixel.x += int(gl_NumWorkGroups.x * gl_LocalGroupSizeARB.x))
+        {
+            if(pixel.x < srcSize.x && pixel.y < srcSize.y)
+            {
+                float value = imageLoad(collisionImageSrc, pixel).x;
+                imageStore(collisionImageDst, pixel, vec4( value , 1, 1, 1));
+            }
+            else
+            {
+                imageStore(collisionImageDst, pixel, vec4( 1, 1, 1, 1));
+            }
+        }
+}

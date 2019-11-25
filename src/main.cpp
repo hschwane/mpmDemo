@@ -38,7 +38,7 @@ int main()
     glClearColor( .2f, .2f, .2f, 1.0f);
 
     // create mpm solver
-    mpmSolver2D solver(float(width) / float(height));
+    mpmSolver2D solver(width,height);
 
     // add resize callback
     window.addFBSizeCallback([&](int w, int h)
@@ -46,11 +46,11 @@ int main()
                                  glViewport(0,0,w,h);
                                  width = w;
                                  height = h;
-                                 solver.setAspectRation(float(width) / float(height));
+                                 solver.setWindowSize(width, height);
                              });
 
-    float backgroundBrushSize = 50;
-    float particleBrushSize = 50;
+    float backgroundBrushSize = 10;
+    float particleBrushSize = 10;
     bool simCanRun = true; //!< should the simulation be running?
     bool simPaused = false; //!< should the simulation be running?
     bool showSolverUI = true; //!< should solver UI be drawn?
@@ -65,6 +65,15 @@ int main()
     mpu::gph::Input::mapKeyToInput("TogglePause", GLFW_KEY_P);
     mpu::gph::Input::addButton("ToggleGeneralUI","Toggles visibility of the general ui", [&](mpu::gph::Window& wnd){ drawGeneralUI = !drawGeneralUI;});
     mpu::gph::Input::mapKeyToInput("ToggleGeneralUI", GLFW_KEY_G);
+
+    mpu::gph::Input::addButton("AddBackground","Draws collision objects into the background", [&](mpu::gph::Window& wnd)
+    {
+        glm::vec2 pos = wnd.getCursorPos();
+        pos.x /= float(width);
+        pos.y = 1.0 - pos.y /float(height);
+        solver.addCollisionObject( pos, backgroundBrushSize);
+    });
+    mpu::gph::Input::mapMouseButtonToInput("AddBackground",GLFW_MOUSE_BUTTON_LEFT,mpu::gph::Input::ButtonBehavior::whenDown);
 
     // Main loop
     while (window.frameEnd(), mpu::gph::Input::update(), window.frameBegin())
@@ -87,7 +96,7 @@ int main()
 
                 if(ImGui::Button("Reset Simulation"))
                 {
-                    solver = mpmSolver2D(float(width) / float(height));
+                    solver = mpmSolver2D(width, height);
                 }
 
                 ImGui::DragFloat("Collision Brush Size",&backgroundBrushSize);
@@ -102,7 +111,7 @@ int main()
         if(simCanRun && !simPaused)
             solver.advanceSimulation();
 
-        solver.drawParticles();
+        solver.drawCollisionMap();
         solver.drawParticles();
 
     }
