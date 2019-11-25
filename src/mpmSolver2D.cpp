@@ -21,7 +21,7 @@
 mpmSolver2D::mpmSolver2D(int width, int height)
     : m_domainSize((float(width) / float(height)) * m_gridHeight, m_gridHeight),
       m_simDomainScale(float(height)/(m_gridHeight)),
-      m_gridVelocityMass(mpu::gph::TextureTypes::texture2D, GL_RGBA16F, 1, m_domainSize.x, m_domainSize.y),
+      m_gridVelocityMass(mpu::gph::TextureTypes::texture2D, GL_RGBA32F, 1, m_domainSize.x, m_domainSize.y),
       m_gridCollision(mpu::gph::TextureTypes::texture2D, GL_R16F, 1, m_domainSize.x, m_domainSize.y),
       m_particleBufferCapacity(m_paticleBufferResizeValue),
       m_particlePositon(m_particleBufferCapacity),
@@ -71,10 +71,15 @@ mpmSolver2D::mpmSolver2D(int width, int height)
     m_particleRenderShader.uniform1b("falloff",m_falloff);
     m_particleRenderShader.uniform2f("domainSize", m_domainSize);
     m_addParticlesShader.uniform1f("spawnSeperation", m_particleSpawnSeperation);
+    m_g2pShader.uniform1i("grid",0);
     m_g2pShader.uniform1i("numParticles",m_numParticles);
     m_g2pShader.uniform2f("simDomain",m_domainSize);
     m_g2pShader.uniform1f("timestep",m_timestep);
     m_g2pShader.uniform1f("particleMass",m_particleMass);
+    m_g2pShader.uniform1f("gridCellSize",1);
+    m_g2pShader.uniform1f("apicFactor",4);
+    m_gridUpdateShader.uniform1i("grid",0);
+    m_gridUpdateShader.uniform1i("collision",1);
     m_gridUpdateShader.uniform2f("simDomain",m_domainSize);
     m_gridUpdateShader.uniform1f("timestep",m_timestep);
     m_p2gShader.uniform2f("simDomain",m_domainSize);
@@ -100,7 +105,7 @@ void mpmSolver2D::setWindowSize(int width, int height)
     m_domainSize = glm::vec2((float(width) / float(height)) * m_gridHeight, m_gridHeight);
     m_simDomainScale = float(height)/(m_gridHeight);
 
-    m_gridVelocityMass = mpu::gph::Texture(mpu::gph::TextureTypes::texture2D, GL_RGBA16F, 1, m_domainSize.x, m_domainSize.y);
+    m_gridVelocityMass = mpu::gph::Texture(mpu::gph::TextureTypes::texture2D, GL_RGBA32F, 1, m_domainSize.x, m_domainSize.y);
     mpu::gph::Texture newCollisionMap(mpu::gph::TextureTypes::texture2D, GL_R16F, 1, m_domainSize.x, m_domainSize.y);
 
     // copy old collision map
@@ -242,6 +247,12 @@ void mpmSolver2D::advanceSimulation()
 void mpmSolver2D::drawCollisionMap()
 {
     m_collisionMapRenderer.draw();
+//    static mpu::gph::ScreenFillingTri tri;
+//    tri.setScreenFillShader(MPU_LIB_SHADER_PATH"drawTexture.frag");
+//    tri.shader().uniform1i("colorMap",4);
+//    m_gridVelocityMass.bind(4);
+//
+//    tri.draw();
 }
 
 void mpmSolver2D::drawParticles()

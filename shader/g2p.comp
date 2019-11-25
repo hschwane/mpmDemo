@@ -41,7 +41,7 @@ void main()
         vec2 pVel = vec2(0);
         const ivec2 middleCellId = ivec2(pPos);
         for( int cidy = middleCellId.y-1; cidy < middleCellId.y+2; cidy++)
-            for( int cidx = middleCellId.x -1; cidy < middleCellId.y+2; cidx++)
+            for( int cidx = middleCellId.x -1; cidx < middleCellId.y+2; cidx++)
             {
                 ivec2 gridCell = ivec2(cidx,cidy);
                 vec2 gridCellPos = vec2(gridCell) + vec2(0.5,0.5);
@@ -52,15 +52,16 @@ void main()
                 vec3 velm = imageLoad(grid,gridCell).xyz;
 
                 pVel += wip * velm.xy;
-                affine += wip * mat2( velm.x * xdiff.x, velm.x * xdiff.y,
-                                        velm.y * xdiff.x, velm.y * xdiff.y);
+//                pVel += velm.xy;
+//                affine += wip * mat2( velm.x * xdiff.x, velm.x * xdiff.y,
+//                                        velm.y * xdiff.x, velm.y * xdiff.y);
             }
 
         // update position
         pPos += timestep * pVel;
 
         // update F
-        mat2 pF = (mat2(1.0f) + timestep * apicFactor * affine) * particleF[id];
+//        mat2 pF = (mat2(1.0f) + timestep * apicFactor * affine) * particleF[id];
 
         // clamp to simulation domain for safety
         pPos = clamp(pPos, vec2(2,2), simDomain-vec2(3,3));
@@ -69,6 +70,6 @@ void main()
         particlePosition[id] = pPos;
         particleVelocity[id] = pVel;
         particleAffine[id] = affine;
-        particleF[id] = pF;
+//        particleF[id] = pF;
     }
 }

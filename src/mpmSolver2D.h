@@ -46,7 +46,7 @@ public:
 private:
 
     // settings
-    int m_gridHeight{256}; //!< number of grid cells in Y direction
+    int m_gridHeight{512}; //!< number of grid cells in Y direction
     int m_paticleBufferResizeValue{4096}; //!< number of slots added to particle buffer upon reallocation
 
     float m_timestep{0.01}; //!< length of a timestep
@@ -54,11 +54,11 @@ private:
     int m_g2pGroupSize{256}; //!< size of workgroup for g2p
     glm::ivec2 m_gridUpdateGroupSize{16,16}; //!< size of workgroup for gridUpdate
 
-    float m_particleSpawnSeperation{1};
-    float m_particleMass{0.001}; //!< mass of one particle
+    float m_particleSpawnSeperation{0.2};
+    float m_particleMass{0.1}; //!< mass of one particle
     float m_bulkModulus{5}; //!< bulk modulus of the material
     float m_exponentialGamma{1}; //!< exponential gamme of the material
-    glm::vec2 m_gravity{0,-1}; //!< gravity
+    glm::vec2 m_gravity{0,-5}; //!< gravity
 
     float m_particleRenderSize{1.0}; //!< render size of particles
     float m_particleBrightness{1.0}; //!< brightness of particles

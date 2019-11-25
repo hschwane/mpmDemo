@@ -42,14 +42,14 @@ void main()
     float wij = kernel(gridCellPos,pPos,gridCellSize);
     vec2 xdiff = gridCellPos - pPos;
 
-    float J = determinant(pF);
-    float pressure = bulkModulus * (1.0f/pow(J,exponentialGamma) -1);
-    mat2 sigma = - pressure * mat2(1.0f);
+//    float J = determinant(pF);
+//    float pressure = bulkModulus * (1.0f/pow(J,exponentialGamma) -1);
+//    mat2 sigma = - pressure * mat2(1.0f);
 
     // compute force and momentum
-    vec2 force = -  J*pV * apicFactor * sigma * xdiff;
+//    vec2 force = -  J*pV * apicFactor * sigma * xdiff;
     vec2 momentum = pMass * (pVel + pAffine * xdiff * apicFactor);
-    momentum += force*timestep;
+//    momentum += force*timestep;
 
     // rasterization takes care of summation
     momentum_mass = vec4( momentum*wij,pMass*wij,0);

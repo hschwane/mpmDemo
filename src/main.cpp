@@ -50,7 +50,6 @@ int main()
 
     float backgroundBrushSize = 2;
     float particleBrushSize = 2;
-    bool simCanRun = true; //!< should the simulation be running?
     bool simPaused = false; //!< should the simulation be running?
     bool showSolverUI = true; //!< should solver UI be drawn?
     bool drawGeneralUI = true; //!< draw the general UI window?
@@ -116,7 +115,7 @@ int main()
         if(showSolverUI)
             solver.drawUI(&showSolverUI);
 
-        if(simCanRun && !simPaused)
+        if(!simPaused)
             solver.advanceSimulation();
 
         glViewport(0,0,width,height);

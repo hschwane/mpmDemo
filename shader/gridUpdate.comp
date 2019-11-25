@@ -30,7 +30,7 @@ void main()
             {
                 // calc celocity and add external acc
                 vec2 vel = mom_m.xy / mom_m.z;
-                vel += + timestep * externalAcc;
+                vel += timestep * externalAcc;
 
                 // slip boundaries
                 if (node.x < 3 || node.x > simDomain.x-4) vel.x = 0;
