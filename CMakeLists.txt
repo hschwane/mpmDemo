@@ -39,6 +39,7 @@ include(setDefaultTypeRelease)
 # -------------------------------------------------------------
 add_executable(mpmDemo
         "src/main.cpp"
+        "src/mpmSolver2D.cpp"
         )
 
 # -------------------------------------------------------------

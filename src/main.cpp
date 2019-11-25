@@ -11,6 +11,7 @@
 #include <iostream>
 #include <mpUtils/mpUtils.h>
 #include <mpUtils/mpGraphics.h>
+#include "mpmSolver2D.h"
 
 int main()
 {
