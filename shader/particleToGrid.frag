@@ -19,5 +19,5 @@ void main()
 {
 
 
-    momentum_mass = vec4(1,1,1,1);
+    momentum_mass = vec4(0.1,0.1,0.1,1);
 }

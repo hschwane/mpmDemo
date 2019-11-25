@@ -77,6 +77,7 @@ mpmSolver2D::mpmSolver2D(int width, int height)
     m_g2pShader.uniform1f("particleMass",m_particleMass);
     m_gridUpdateShader.uniform2f("simDomain",m_domainSize);
     m_gridUpdateShader.uniform1f("timestep",m_timestep);
+    m_p2gShader.uniform2f("simDomain",m_domainSize);
 
     // set up shader for collision map renderer
     m_collisionMapRenderer.setScreenFillShader(PROJECT_SHADER_PATH"collisionMap.frag");
@@ -114,9 +115,10 @@ void mpmSolver2D::setWindowSize(int width, int height)
     m_particleRenderShader.uniform2f("domainSize", m_domainSize);
     m_g2pShader.uniform2f("simDomain",m_domainSize);
     m_gridUpdateShader.uniform2f("simDomain",m_domainSize);
+    m_p2gShader.uniform2f("simDomain",m_domainSize);
+
 
 }
-
 
 void mpmSolver2D::applyExternalAcc(glm::vec2 force)
 {
@@ -210,12 +212,15 @@ void mpmSolver2D::advanceSimulation()
 
     // use rasterization pipeline for particle to grid
     m_fbo.attach( GL_COLOR_ATTACHMENT0, m_gridVelocityMass);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_ONE, GL_ONE);
     m_fbo.use();
     glViewport(0,0,m_domainSize.x,m_domainSize.y);
     m_vao.bind();
     m_p2gShader.use();
     glDrawArrays(GL_POINTS,0,m_numParticles);
     m_fbo.disable();
+    glDisable(GL_BLEND);
 
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
     m_gridUpdateShader.dispatch(m_domainSize,m_gridUpdateGroupSize);
