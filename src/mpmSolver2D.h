@@ -34,7 +34,7 @@ public:
     explicit mpmSolver2D(int width, int height); //!< constructor of the mpm solver
     void setWindowSize(int width, int height); //!< set new aspect ratio for the simulation domain (will resize the grid)
 
-    void applyExternalForce(glm::vec2 force); //!< apply an external force on the material
+    void applyExternalAcc(glm::vec2 force); //!< apply an external force on the material
     void addParticles(glm::vec2 position, float radius); //!< add particles in radius around position
     void addCollisionObject(glm::vec2 position, float radius); //!< add collision object in radius around position
 
@@ -52,6 +52,7 @@ private:
     float m_timestep{0.01}; //!< length of a timestep
     int m_timestepsPerFrame{1}; //!< number of timesteps to be performed per frame
     int m_g2pGroupSize{256}; //!< size of workgroup for g2p
+    glm::ivec2 m_gridUpdateGroupSize{16,16}; //!< size of workgroup for gridUpdate
 
     float m_particleSpawnSeperation{1};
     float m_particleMass{0.001}; //!< mass of one particle
@@ -68,7 +69,7 @@ private:
     glm::vec3 m_backgroundColor{ .2f, .2f, .2f}; // color drawn in the background
 
     // other vars
-    glm::vec2 m_additionalForces{0,0}; //!< forces added via apply external force function
+    glm::vec2 m_additionalAcc{0, 0}; //!< acceleration added via apply external acc function
     glm::ivec2 m_domainSize; //!< actual amount of grid cells == size of domain
     float m_simDomainScale; //!< scale sim down for rendering
     int m_particleBufferCapacity; //!< current capacity of particle buffers
@@ -82,7 +83,7 @@ private:
     mpu::gph::Buffer<float> m_initialVolume; //! inital volume of particles
 
     // grid data
-    mpu::gph::Texture m_gridVelocityMass; //!< velocities and mass on the grid (mass is alpha component)
+    mpu::gph::Texture m_gridVelocityMass; //!< velocities and mass on the grid (mass is blue component)
     mpu::gph::Texture m_gridCollision; //!< collision level set on the grid
 
     // vao for rendering

@@ -33,6 +33,7 @@ mpmSolver2D::mpmSolver2D(int width, int height)
       m_addParticlesShader({{PROJECT_SHADER_PATH"addParticles.comp"}}),
       m_copyCollisionMapShader({{PROJECT_SHADER_PATH"copyCollisionMap.comp"}}),
       m_particleRenderShader({{PROJECT_SHADER_PATH"particleRenderer.vert"},{PROJECT_SHADER_PATH"particleRenderer.frag"}}),
+      m_gridUpdateShader({{PROJECT_SHADER_PATH"gridUpdate.comp"}}),
       m_g2pShader({{PROJECT_SHADER_PATH"g2p.comp"}})
 {
     // bind all the buffers
@@ -73,6 +74,8 @@ mpmSolver2D::mpmSolver2D(int width, int height)
     m_g2pShader.uniform2f("simDomain",m_domainSize);
     m_g2pShader.uniform1f("timestep",m_timestep);
     m_g2pShader.uniform1f("particleMass",m_particleMass);
+    m_gridUpdateShader.uniform2f("simDomain",m_domainSize);
+    m_gridUpdateShader.uniform1f("timestep",m_timestep);
 
     // set up shader for collision map renderer
     m_collisionMapRenderer.setScreenFillShader(PROJECT_SHADER_PATH"collisionMap.frag");
@@ -109,12 +112,14 @@ void mpmSolver2D::setWindowSize(int width, int height)
     m_particleRenderShader.uniform1f("renderScale",m_simDomainScale);
     m_particleRenderShader.uniform2f("domainSize", m_domainSize);
     m_g2pShader.uniform2f("simDomain",m_domainSize);
+    m_gridUpdateShader.uniform2f("simDomain",m_domainSize);
+
 }
 
 
-void mpmSolver2D::applyExternalForce(glm::vec2 force)
+void mpmSolver2D::applyExternalAcc(glm::vec2 force)
 {
-    m_additionalForces += force;
+    m_additionalAcc += force;
 }
 
 void mpmSolver2D::addParticles(glm::vec2 position, float radius)
@@ -194,8 +199,17 @@ void mpmSolver2D::drawUI(bool* shouldBeDrawn)
 
 void mpmSolver2D::advanceSimulation()
 {
+    m_gridUpdateShader.uniform2f("externalAcc", m_additionalAcc + m_gravity);
+    m_additionalAcc = glm::vec2(0);
+
+    glm::vec4 clear(0,0,0,0);
+    m_gridVelocityMass.clear(glm::value_ptr(clear),GL_RGBA,GL_FLOAT,0);
+
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
+
+    glMemoryBarrier(GL_ALL_BARRIER_BITS);
+    m_gridUpdateShader.dispatch(m_domainSize,m_gridUpdateGroupSize);
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
     m_g2pShader.dispatch(m_numParticles,m_g2pGroupSize);
     glMemoryBarrier(GL_ALL_BARRIER_BITS);

@@ -1,0 +1,44 @@
+#version 450 core
+#extension GL_ARB_compute_variable_group_size : require
+
+// --------------------------------------
+// uniforms
+uniform vec2 simDomain;
+uniform vec2 externalAcc;
+uniform float timestep;
+
+// --------------------------------------
+// texture bindings
+uniform layout(rgba32f) restrict image2D grid;
+uniform layout(r16f) restrict readonly image2D collision;
+
+// --------------------------------------
+// compute parameters
+layout(local_size_variable) in;
+
+void main()
+{
+    ivec2 gridSize = imageSize(grid);
+    ivec2 node;
+    for(  node.y= int(gl_GlobalInvocationID.y); node.y < gridSize.y; node.y += int(gl_NumWorkGroups.y * gl_LocalGroupSizeARB.y))
+        for(  node.x= int(gl_GlobalInvocationID.x); node.x < gridSize.x; node.x += int(gl_NumWorkGroups.x * gl_LocalGroupSizeARB.x))
+        {
+            // load momentum and mass
+            const vec4 mom_m = imageLoad(grid,node);
+
+            if(mom_m.w > 0)
+            {
+                // calc celocity and add external acc
+                vec2 vel = mom_m.xy / mom_m.z;
+                vel += + timestep * externalAcc;
+
+                // slip boundaries
+                if (node.x < 3 || node.x > simDomain.x-4) vel.x = 0;
+                if (node.y < 3 || node.y > simDomain.y-4) vel.y = 0;
+
+                // TODO: handle collision and proper boundaries
+
+                imageStore(grid, node, vec4(vel, mom_m.z, 0));
+            }
+        }
+}

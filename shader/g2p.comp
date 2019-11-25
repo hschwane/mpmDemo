@@ -12,7 +12,7 @@ uniform float particleMass;
 
 // --------------------------------------
 // texture bindings
-uniform layout(rgba32f) restrict image2D grid;
+uniform layout(rgba32f) restrict readonly image2D grid;
 
 // --------------------------------------
 // buffer bindings
@@ -38,7 +38,7 @@ void main()
         pos += timestep * vel;
 
         // clamp to simulation domain for safety
-        pos = clamp(pos, vec2(2,2), simDomain-vec2(2,2));
+        pos = clamp(pos, vec2(2,2), simDomain-vec2(3,3));
 
         particlePosition[id] = pos;
     }
