@@ -7,6 +7,10 @@
 uniform int numParticles;
 uniform float pMass;
 uniform float gridCellSize=1;
+uniform float bulkModulus;
+uniform float exponentialGamma;
+uniform float apicFactor=4.0f;
+uniform float timestep;
 
 // --------------------------------------
 // texture bindings
@@ -34,6 +38,13 @@ void main()
         vec2 pPos = particlePosition[id];
         vec2 pVel = particleVelocity[id];
         mat2 pAffine = particleAffine[id];
+        mat2 pF = particleF[id];
+        float pV = particleVolume[id];
+
+        // material model for liquids
+        float J = determinant(pF);
+        float pressure = bulkModulus * ( (1.0f/pow(J,exponentialGamma)) -1);
+        mat2 sigma = - pressure * mat2(1.0f);
 
         ivec2 cellId = ivec2(pPos);
         vec2 cellDiff = (pPos - cellId) -0.5;
@@ -52,6 +63,8 @@ void main()
                 vec2 xdiff = (cellIndex - pPos) + 0.5;
 
                 vec2 momentum = wip * pMass * (pVel + pAffine * xdiff);
+                vec2 force = -J*pV * apicFactor * sigma * xdiff * wip;
+                momentum += timestep * force;
                 float mass = wip * pMass;
 
                 imageAtomicAdd(gridVX,cellIndex, momentum.x);

@@ -100,6 +100,10 @@ mpmSolver2D::mpmSolver2D(int width, int height)
     m_p2gShaderAtomic.uniform1i("numParticles",m_numParticles);
     m_p2gShaderAtomic.uniform1f("pMass",m_particleMass);
     m_p2gShaderAtomic.uniform1f("gridCellSize",1);
+    m_p2gShaderAtomic.uniform1f("apicFactor",4);
+    m_p2gShaderAtomic.uniform1f("bulkModulus",m_bulkModulus);
+    m_p2gShaderAtomic.uniform1f("exponentialGamma",m_exponentialGamma);
+    m_p2gShaderAtomic.uniform1f("timestep",m_timestep);
     m_p2gShaderAtomic.uniform1i("gridVX",3);
     m_p2gShaderAtomic.uniform1i("gridVY",4);
     m_p2gShaderAtomic.uniform1i("gridM",5);

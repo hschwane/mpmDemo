@@ -56,7 +56,7 @@ private:
 
     float m_particleSpawnSeperation{1.0};
     float m_particleMass{0.1}; //!< mass of one particle
-    float m_bulkModulus{5}; //!< bulk modulus of the material
+    float m_bulkModulus{0}; //!< bulk modulus of the material
     float m_exponentialGamma{1}; //!< exponential gamme of the material
     glm::vec2 m_gravity{0,-10}; //!< gravity
 

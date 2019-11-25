@@ -31,5 +31,7 @@ void main()
         particlePosition[startID + id] = pos;
         particleVelocity[startID + id] = vec2(0,0);
         particleVolume[startID + id] = 4.0*addRadius*addRadius / problemSize;
+        particleF[startID + id] = mat2(1.0f);
+        particleAffine[startID + id] = mat2(0.0f);
     }
 }
