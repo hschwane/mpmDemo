@@ -37,7 +37,7 @@ mpmSolver2D::mpmSolver2D(int width, int height)
       m_particleRenderShader({{PROJECT_SHADER_PATH"particleRenderer.vert"},{PROJECT_SHADER_PATH"particleRenderer.frag"}}),
       m_gridUpdateShader({{PROJECT_SHADER_PATH"gridUpdate.comp"}}),
       m_g2pShader({{PROJECT_SHADER_PATH"g2p.comp"}}),
-      m_p2gShader({{PROJECT_SHADER_PATH"particleToGrid.vert"},{PROJECT_SHADER_PATH"particleToGrid.frag"}}),
+//      m_p2gShader({{PROJECT_SHADER_PATH"particleToGrid.vert"},{PROJECT_SHADER_PATH"particleToGrid.frag"}}),
       m_p2gShaderAtomic({{PROJECT_SHADER_PATH"p2g.comp"}})
 {
     m_currentWidth = width;
@@ -157,6 +157,7 @@ void mpmSolver2D::setWindowSize(int width, int height)
     m_particleRenderShader.uniform2f("domainSize", m_domainSize);
     m_g2pShader.uniform2f("simDomain",m_domainSize);
     m_gridUpdateShader.uniform2f("simDomain",m_domainSize);
+
 //    m_p2gShader.uniform2f("simDomain",m_domainSize);
 }
 
@@ -169,7 +170,7 @@ void mpmSolver2D::addParticles(glm::vec2 position)
 {
     position.x *= m_domainSize.x;
     position.y *= m_domainSize.y;
-    int numSqrt = int(2.0f * m_particleBrushSize * m_spawnParticlesPerCell) + 1;
+    int numSqrt = int(2.0f * m_particleBrushSize * m_spawnParticlesPerCell + 1);
     int numAdded = numSqrt*numSqrt;
 
     // check if there is still space
@@ -257,8 +258,11 @@ void mpmSolver2D::drawUI(bool* shouldBeDrawn)
         if(ImGui::DragFloat("Particles spawned per cell", &m_spawnParticlesPerCell, 0.02))
             m_addParticlesShader.uniform1f("spawnedPerCell", m_spawnParticlesPerCell);
 
-        if(ImGui::Button("Remove Particles"))
-            m_numParticles=0;
+        if(ImGui::Button("Remove Particles")) {
+            m_numParticles = 0;
+            m_g2pShader.uniform1i("numParticles",m_numParticles);
+            m_p2gShaderAtomic.uniform1i("numParticles",m_numParticles);
+        }
         ImGui::SameLine();
         if(ImGui::Button("Remove Obstacles"))
             clearCollisionMap();
@@ -271,8 +275,6 @@ void mpmSolver2D::drawUI(bool* shouldBeDrawn)
             m_g2pShader.uniform1f("pMass",m_particleMass);
             m_p2gShaderAtomic.uniform1f("pMass",m_particleMass);
         }
-
-
     }
     ImGui::End();
 }
@@ -305,10 +307,10 @@ void mpmSolver2D::advanceSimulation()
 
         m_p2gShaderAtomic.dispatch(m_numParticles,m_g2pGroupSize);
         glMemoryBarrier(GL_ALL_BARRIER_BITS);
-//        m_gridUpdateShader.dispatch(m_domainSize,m_gridUpdateGroupSize);
-//        glMemoryBarrier(GL_ALL_BARRIER_BITS);
-//        m_g2pShader.dispatch(m_numParticles,m_g2pGroupSize);
-//        glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        m_gridUpdateShader.dispatch(m_domainSize,m_gridUpdateGroupSize);
+        glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        m_g2pShader.dispatch(m_numParticles,m_g2pGroupSize);
+        glMemoryBarrier(GL_ALL_BARRIER_BITS);
     }
 }
 

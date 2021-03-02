@@ -102,7 +102,7 @@ private:
     mpu::gph::ShaderProgram m_copyCollisionMapShader; //!< copy collision map from one texture to another
     mpu::gph::ScreenFillingTri m_collisionMapRenderer; //!< renders collision map
 
-    mpu::gph::ShaderProgram m_p2gShader; //!< shader used during particle to grid transfer
+//    mpu::gph::ShaderProgram m_p2gShader; //!< shader used during particle to grid transfer
     mpu::gph::ShaderProgram m_p2gShaderAtomic; //!< shader used during particle to grid transfer
     mpu::gph::ShaderProgram m_gridUpdateShader; //!< shader used for grid update
     mpu::gph::ShaderProgram m_g2pShader; //!< shader used during grid to particle transfer
