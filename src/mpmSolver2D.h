@@ -54,7 +54,6 @@ private:
     int m_g2pGroupSize{256}; //!< size of workgroup for g2p
     glm::ivec2 m_gridUpdateGroupSize{16,16}; //!< size of workgroup for gridUpdate
 
-    float m_particleSpawnSeparation{1.0};
     float m_particleMass{0.1}; //!< mass of one particle
     float m_bulkModulus{1}; //!< bulk modulus of the material
     float m_exponentialGamma{1}; //!< exponential gamma of the material
@@ -67,6 +66,8 @@ private:
     glm::vec3 m_particleColor{0.098, 0.670, 0.921}; //!< color of particles
     glm::vec3 m_collisionColor{0.921, 0.584, 0.203}; //!< color of the collision boundary
     glm::vec3 m_backgroundColor{ .2f, .2f, .2f}; //!< color drawn in the background
+
+    float m_spawnParticlesPerCell{1.0}; //!< amount of particles spawned per grid cell
     float m_obstacleBrushSize{15}; //!< radius of grid cells effected when drawing obstacles
     float m_particleBrushSize{15}; //!< radius of grid cells effected when drawing particles
 

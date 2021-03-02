@@ -5,7 +5,7 @@
 // uniforms
 uniform vec2 addPosition;
 uniform float addRadius;
-uniform float spawnSeperation;
+uniform float spawnedPerCell;
 uniform int startID;
 
 // --------------------------------------
@@ -22,11 +22,12 @@ layout(local_size_variable) in;
 
 void main()
 {
-    int problemSizeSqrt = int(2.0*addRadius / spawnSeperation +1);
+    int problemSizeSqrt = int(2.0*addRadius * spawnedPerCell +1);
+    float dist = 1/spawnedPerCell;
     int problemSize = problemSizeSqrt * problemSizeSqrt;
     for(  int id = int(gl_GlobalInvocationID.x); id < problemSize; id += int(gl_NumWorkGroups.x * gl_LocalGroupSizeARB.x))
     {
-        vec2 pos = addPosition - vec2(addRadius,addRadius) + spawnSeperation*vec2(id%problemSizeSqrt,id/problemSizeSqrt);
+        vec2 pos = addPosition - vec2(addRadius,addRadius) + dist*vec2(id%problemSizeSqrt,id/problemSizeSqrt);
 
         particlePosition[startID + id] = pos;
         particleVelocity[startID + id] = vec2(0,0);

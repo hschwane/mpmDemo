@@ -78,7 +78,7 @@ mpmSolver2D::mpmSolver2D(int width, int height)
     m_particleRenderShader.uniform1b("colorcodeVelocity",m_colorcodeVelocity);
     m_particleRenderShader.uniform1b("falloff",m_falloff);
     m_particleRenderShader.uniform2f("domainSize", m_domainSize);
-    m_addParticlesShader.uniform1f("spawnSeperation", m_particleSpawnSeparation);
+    m_addParticlesShader.uniform1f("spawnedPerCell", m_spawnParticlesPerCell);
 
     m_g2pShader.uniform1i("gridVX",3);
     m_g2pShader.uniform1i("gridVY",4);
@@ -169,7 +169,7 @@ void mpmSolver2D::addParticles(glm::vec2 position)
 {
     position.x *= m_domainSize.x;
     position.y *= m_domainSize.y;
-    int numSqrt = int(2.0f * m_particleBrushSize / m_particleSpawnSeparation) + 1;
+    int numSqrt = int(2.0f * m_particleBrushSize * m_spawnParticlesPerCell) + 1;
     int numAdded = numSqrt*numSqrt;
 
     // check if there is still space
@@ -254,7 +254,8 @@ void mpmSolver2D::drawUI(bool* shouldBeDrawn)
 
         ImGui::DragFloat("Collision Brush Size",&m_obstacleBrushSize,0.5);
         ImGui::DragFloat("Particle Brush Size",&m_particleBrushSize,0.5);
-        ImGui::DragFloat("Spawn seperation", &m_particleSpawnSeparation, 0.1);
+        if(ImGui::DragFloat("Particles spawned per cell", &m_spawnParticlesPerCell, 0.02))
+            m_addParticlesShader.uniform1f("spawnedPerCell", m_spawnParticlesPerCell);
 
         if(ImGui::Button("Remove Particles"))
             m_numParticles=0;
