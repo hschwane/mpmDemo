@@ -8,7 +8,6 @@
  * Copyright (c) 2019 Hendrik Schwanekamp
  *
  */
-#include <iostream>
 #include <mpUtils/mpUtils.h>
 #include <mpUtils/mpGraphics.h>
 #include "mpmSolver2D.h"
@@ -23,7 +22,7 @@ int main()
     myLog.printHeader("mpmDemo", "", "", "Debug");
 #endif
 
-    // add shader include pathes
+    // add shader include paths
     mpu::gph::addShaderIncludePath(MPU_LIB_SHADER_PATH"include");
     mpu::gph::addShaderIncludePath(PROJECT_SHADER_PATH"include");
 
@@ -46,10 +45,9 @@ int main()
                                  width = w;
                                  height = h;
                                  solver.setWindowSize(width, height);
+                                 glViewport(0,0,width,height);
                              });
 
-    float backgroundBrushSize = 2;
-    float particleBrushSize = 2;
     bool simPaused = false; //!< should the simulation be running?
     bool showSolverUI = true; //!< should solver UI be drawn?
     bool drawGeneralUI = true; //!< draw the general UI window?
@@ -92,7 +90,7 @@ int main()
         {
             if(ImGui::Begin("mpmDemo",&drawGeneralUI))
             {
-                ImGui::Text("Frametime: %f", mpu::gph::Input::deltaTime());
+                ImGui::Text("Frame-time: %f", mpu::gph::Input::deltaTime());
                 ImGui::Text("FPS: %f", 1.0f / mpu::gph::Input::deltaTime());
 
                 if(ImGui::Checkbox("V-Sync",&vsync))
@@ -115,7 +113,7 @@ int main()
         if(!simPaused)
             solver.advanceSimulation();
 
-        glViewport(0,0,width,height);
+
         solver.drawCollisionMap();
         solver.drawParticles();
     }

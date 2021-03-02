@@ -47,17 +47,17 @@ private:
 
     // settings
     int m_gridHeight{512}; //!< number of grid cells in Y direction
-    int m_paticleBufferResizeValue{4096}; //!< number of slots added to particle buffer upon reallocation
+    int m_particleBufferResizeValue{4096}; //!< number of slots added to particle buffer upon reallocation
 
     float m_timestep{0.1}; //!< length of a timestep
     int m_timestepsPerFrame{2}; //!< number of timesteps to be performed per frame
     int m_g2pGroupSize{256}; //!< size of workgroup for g2p
     glm::ivec2 m_gridUpdateGroupSize{16,16}; //!< size of workgroup for gridUpdate
 
-    float m_particleSpawnSeperation{1.0};
+    float m_particleSpawnSeparation{1.0};
     float m_particleMass{0.1}; //!< mass of one particle
-    float m_bulkModulus{0}; //!< bulk modulus of the material
-    float m_exponentialGamma{1}; //!< exponential gamme of the material
+    float m_bulkModulus{1}; //!< bulk modulus of the material
+    float m_exponentialGamma{1}; //!< exponential gamma of the material
     glm::vec2 m_gravity{0,-10}; //!< gravity
 
     float m_particleRenderSize{1.0}; //!< render size of particles
@@ -76,14 +76,14 @@ private:
     float m_simDomainScale; //!< scale sim down for rendering
     int m_particleBufferCapacity; //!< current capacity of particle buffers
     int m_numParticles{0}; //!< number of particles in the simulation
-    int m_currentWidth, m_currentHight; //!< current width and height of the window
+    int m_currentWidth, m_currentHeight; //!< current width and height of the window
 
     // particle data
     mpu::gph::Buffer<glm::vec2> m_particlePositon; //!< position of particles
     mpu::gph::Buffer<glm::vec2> m_particleVelocity; //!< velocity of particles
     mpu::gph::Buffer<glm::mat2> m_particleF; //!< deformation gradient of particles
     mpu::gph::Buffer<glm::mat2> m_particleAffine; //!< APIC affine matrix
-    mpu::gph::Buffer<float> m_initialVolume; //! inital volume of particles
+    mpu::gph::Buffer<float> m_initialVolume; //! initial volume of particles
 
     // grid data
     mpu::gph::Texture m_gridVelX; //!< x-velocities on the grid

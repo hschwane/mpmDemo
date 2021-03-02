@@ -19,13 +19,13 @@
 // function definitions of the mpmSolver2D class
 //-------------------------------------------------------------------
 mpmSolver2D::mpmSolver2D(int width, int height)
-    : m_domainSize((float(width) / float(height)) * m_gridHeight, m_gridHeight),
-      m_simDomainScale(float(height)/(m_gridHeight)),
+    : m_domainSize((float(width) / float(height)) * float(m_gridHeight), m_gridHeight),
+      m_simDomainScale(float(height)/float(m_gridHeight)),
       m_gridVelX(mpu::gph::TextureTypes::texture2D, GL_R32F, 1, m_domainSize.x, m_domainSize.y),
       m_gridVelY(mpu::gph::TextureTypes::texture2D, GL_R32F, 1, m_domainSize.x, m_domainSize.y),
       m_gridMass(mpu::gph::TextureTypes::texture2D, GL_R32F, 1, m_domainSize.x, m_domainSize.y),
       m_gridCollision(mpu::gph::TextureTypes::texture2D, GL_R16F, 1, m_domainSize.x, m_domainSize.y),
-      m_particleBufferCapacity(m_paticleBufferResizeValue),
+      m_particleBufferCapacity(m_particleBufferResizeValue),
       m_particlePositon(m_particleBufferCapacity),
       m_particleVelocity(m_particleBufferCapacity),
       m_particleF(m_particleBufferCapacity),
@@ -41,7 +41,7 @@ mpmSolver2D::mpmSolver2D(int width, int height)
       m_p2gShaderAtomic({{PROJECT_SHADER_PATH"p2g.comp"}})
 {
     m_currentWidth = width;
-    m_currentHight = height;
+    m_currentHeight = height;
 
     // bind all the buffers
     m_particlePositon.bindBase(2,GL_SHADER_STORAGE_BUFFER);
@@ -78,7 +78,7 @@ mpmSolver2D::mpmSolver2D(int width, int height)
     m_particleRenderShader.uniform1b("colorcodeVelocity",m_colorcodeVelocity);
     m_particleRenderShader.uniform1b("falloff",m_falloff);
     m_particleRenderShader.uniform2f("domainSize", m_domainSize);
-    m_addParticlesShader.uniform1f("spawnSeperation", m_particleSpawnSeperation);
+    m_addParticlesShader.uniform1f("spawnSeperation", m_particleSpawnSeparation);
 
     m_g2pShader.uniform1i("gridVX",3);
     m_g2pShader.uniform1i("gridVY",4);
@@ -128,9 +128,9 @@ mpmSolver2D::mpmSolver2D(int width, int height)
 void mpmSolver2D::setWindowSize(int width, int height)
 {
     m_currentWidth = width;
-    m_currentHight = height;
-    m_domainSize = glm::vec2((float(width) / float(height)) * m_gridHeight, m_gridHeight);
-    m_simDomainScale = float(height)/(m_gridHeight);
+    m_currentHeight = height;
+    m_domainSize = glm::vec2((float(width) / float(height)) * float(m_gridHeight), m_gridHeight);
+    m_simDomainScale = float(height)/float(m_gridHeight);
 
     m_gridVelX = mpu::gph::Texture(mpu::gph::TextureTypes::texture2D, GL_R32F, 1, m_domainSize.x, m_domainSize.y);
     m_gridVelY = mpu::gph::Texture(mpu::gph::TextureTypes::texture2D, GL_R32F, 1, m_domainSize.x, m_domainSize.y);
@@ -158,8 +158,6 @@ void mpmSolver2D::setWindowSize(int width, int height)
     m_g2pShader.uniform2f("simDomain",m_domainSize);
     m_gridUpdateShader.uniform2f("simDomain",m_domainSize);
 //    m_p2gShader.uniform2f("simDomain",m_domainSize);
-
-
 }
 
 void mpmSolver2D::applyExternalAcc(glm::vec2 force)
@@ -171,14 +169,14 @@ void mpmSolver2D::addParticles(glm::vec2 position)
 {
     position.x *= m_domainSize.x;
     position.y *= m_domainSize.y;
-    int numSqrt = (2.0*m_particleBrushSize / m_particleSpawnSeperation) +1;
+    int numSqrt = int(2.0f * m_particleBrushSize / m_particleSpawnSeparation) + 1;
     int numAdded = numSqrt*numSqrt;
 
     // check if there is still space
     if(m_particleBufferCapacity <= m_numParticles+numAdded)
     {
         // allocate new buffers
-        int newCapacity = m_particleBufferCapacity + glm::max(m_paticleBufferResizeValue, numAdded);
+        int newCapacity = m_particleBufferCapacity + glm::max(m_particleBufferResizeValue, numAdded);
         mpu::gph::Buffer<glm::vec2> newParticlePositon(newCapacity);
         mpu::gph::Buffer<glm::vec2> newParticleVelocity(newCapacity);
         mpu::gph::Buffer<glm::mat2> newParticleF(newCapacity);
@@ -250,13 +248,13 @@ void mpmSolver2D::drawUI(bool* shouldBeDrawn)
         ImGui::DragInt("Timesteps per Frame",&m_timestepsPerFrame);
 
         if(ImGui::DragInt("Grid Resolution", &m_gridHeight))
-            setWindowSize(m_currentWidth,m_currentHight); // trigger grid rebuild
+            setWindowSize(m_currentWidth, m_currentHeight); // trigger grid rebuild
 
         ImGui::Separator();
 
         ImGui::DragFloat("Collision Brush Size",&m_obstacleBrushSize,0.5);
         ImGui::DragFloat("Particle Brush Size",&m_particleBrushSize,0.5);
-        ImGui::DragFloat("Spawn seperation",&m_particleSpawnSeperation,0.1);
+        ImGui::DragFloat("Spawn seperation", &m_particleSpawnSeparation, 0.1);
 
         if(ImGui::Button("Remove Particles"))
             m_numParticles=0;
@@ -306,24 +304,24 @@ void mpmSolver2D::advanceSimulation()
 
         m_p2gShaderAtomic.dispatch(m_numParticles,m_g2pGroupSize);
         glMemoryBarrier(GL_ALL_BARRIER_BITS);
-        m_gridUpdateShader.dispatch(m_domainSize,m_gridUpdateGroupSize);
-        glMemoryBarrier(GL_ALL_BARRIER_BITS);
-        m_g2pShader.dispatch(m_numParticles,m_g2pGroupSize);
-        glMemoryBarrier(GL_ALL_BARRIER_BITS);
+//        m_gridUpdateShader.dispatch(m_domainSize,m_gridUpdateGroupSize);
+//        glMemoryBarrier(GL_ALL_BARRIER_BITS);
+//        m_g2pShader.dispatch(m_numParticles,m_g2pGroupSize);
+//        glMemoryBarrier(GL_ALL_BARRIER_BITS);
     }
 }
 
 void mpmSolver2D::drawCollisionMap()
 {
-    m_collisionMapRenderer.draw();
-//    static mpu::gph::ScreenFillingTri tri;
-//    tri.setScreenFillShader(MPU_LIB_SHADER_PATH"drawTexture.frag");
-//    tri.shader().uniform1i("colorMap",4);
+//    m_collisionMapRenderer.draw();
+    static mpu::gph::ScreenFillingTri tri;
+    tri.setScreenFillShader(MPU_LIB_SHADER_PATH"drawTexture.frag");
+    tri.shader().uniform1i("colorMap",4);
 //    m_gridVelX.bind(4);
 //    m_gridVelY.bind(4);
-//    m_gridMass.bind(4);
-//
-//    tri.draw();
+    m_gridMass.bind(4);
+
+    tri.draw();
 }
 
 void mpmSolver2D::drawParticles()
